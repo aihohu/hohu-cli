@@ -1,9 +1,27 @@
 [project]
 name = "hohu"
-version = "0.1.2"
+version = "0.1.3"
 description = "HoHu CLI Tool"
 readme = "README.md"
 requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "hohu", email = "hohu@hohu.org"},
+]
+keywords = ["hohu", "cli", "fastapi", "openapi", "mcp", "ai", "tools", "api","admin-system"]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
 dependencies = [
     "gitpython>=3.1.46",
     "questionary>=2.1.1",
@@ -11,6 +29,10 @@ dependencies = [
     "ruff>=0.14.10",
     "typer>=0.21.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/aihohu/hohu-cli"
+Issues = "https://github.com/aihohu/hohu-cli/issues"
 
 [dependency-groups]
 dev = [
