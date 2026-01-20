@@ -1,0 +1,18 @@
+{
+  "select_lang": "Select CLI interaction language:",
+  "lang_updated": "Language settings updated successfully.",
+  "select_components": "Select components to create (Space to select, Enter to confirm):",
+  "no_selection": "No components selected, operation cancelled.",
+  "cloning": "Cloning",
+  "success_msg": "Project created successfully!",
+  "next_step_init": "Next step, run the following commands to initialize:",
+  "aborted": "Operation aborted by user.",
+  "not_in_project": "Error: .hohu config not found. Please ensure you are in the project root.",
+  "initializing": "Initializing project:",
+  "installing_deps": "Installing dependencies...",
+  "init_success": "All environments initialized successfully!",
+  "init_failed": "Initialization failed, please check your network or tool installations.",
+  "cmd_not_found": "Command not found: ",
+  "dir_exists": "Error: Directory already exists: ",
+  "dev_start": "Start the development environment "
+}

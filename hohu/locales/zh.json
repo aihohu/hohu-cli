@@ -1,0 +1,18 @@
+{
+  "select_lang": "请选择 CLI 交互语言 / Select Language:",
+  "lang_updated": "语言设置已更新，立即生效。",
+  "select_components": "请选择要创建的组件 (空格选中/取消，回车确认):",
+  "no_selection": "未选择任何组件，操作已取消。",
+  "cloning": "正在克隆",
+  "success_msg": "项目创建完成！",
+  "next_step_init": "下一步，请执行以下命令进行初始化：",
+  "aborted": "用户取消了操作。",
+  "not_in_project": "错误: 未发现 .hohu 配置。请确保你在项目根目录下执行此命令。",
+  "initializing": "正在初始化项目:",
+  "installing_deps": "正在安装依赖...",
+  "init_success": "所有环境初始化就绪！",
+  "init_failed": "初始化失败，请检查网络或工具安装情况。",
+  "cmd_not_found": "未找到命令: ",
+  "dir_exists": "错误: 目录已存在: ",
+  "dev_start": "启动开发环境"
+}
