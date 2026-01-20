@@ -149,7 +149,7 @@ def dev(
             console.print(f"[bold red]无法启动 {item}: {e}[/bold red]")
 
     # 处理退出逻辑
-    def signal_handler(sig, frame):
+    def signal_handler(_sig, _frame):
         console.print("\n[bold yellow]正在停止所有服务...[/bold yellow]")
         for p in processes:
             p.terminate()
