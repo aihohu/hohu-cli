@@ -1,7 +1,6 @@
 import shutil
 import signal
 import subprocess
-import sys
 import threading
 
 import typer
@@ -157,7 +156,7 @@ def dev(
     def _terminate_all():
         """终止所有子进程"""
         console.print("\n[bold yellow]正在停止所有服务...[/bold yellow]")
-        for name, p in processes.items():
+        for _name, p in processes.items():
             p.terminate()
             try:
                 p.wait(timeout=5)
