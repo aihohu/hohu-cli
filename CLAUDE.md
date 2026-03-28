@@ -13,6 +13,7 @@ uv sync
 # 代码检查 + 格式化
 uv run ruff check hohu/ tests/
 uv run ruff format hohu/ tests/
+uv run ruff check . 
 
 # 运行测试
 uv run pytest
