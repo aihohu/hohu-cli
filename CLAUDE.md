@@ -11,9 +11,8 @@ hohu-cli 是一个基于 Typer 的 Python CLI 工具（v0.1.3），为 hohu-admi
 uv sync
 
 # 代码检查 + 格式化
-uv run ruff check hohu/ tests/
-uv run ruff format hohu/ tests/
-uv run ruff check . 
+uv run ruff format .
+uv run ruff check --fix .
 
 # 运行测试
 uv run pytest
