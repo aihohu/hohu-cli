@@ -37,7 +37,7 @@ class I18n:
         target_lang = self.lang
 
         if target_lang == "auto":
-            sys_lang = locale.getdefaultlocale()[0]
+            sys_lang = locale.getlocale()[0]
             target_lang = "zh" if sys_lang and "zh" in sys_lang else "en"
 
         # 优先找目标语言，找不到找英文，再找不到返回 key 本身

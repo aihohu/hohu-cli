@@ -1,5 +1,4 @@
 import shutil
-import signal
 import subprocess
 import threading
 
@@ -179,21 +178,10 @@ def dev(
         t = threading.Thread(target=monitor_worker, args=(name, p), daemon=True)
         t.start()
 
-    def signal_handler(_sig, _frame):
-        """处理 Ctrl+C 信号"""
-        stop_event.set()
-        _terminate_all()
-
-    # 跨平台信号处理：Unix 系统使用信号处理器，Windows 主要依赖 KeyboardInterrupt
-    try:
-        signal.signal(signal.SIGINT, signal_handler)
-    except (AttributeError, ValueError):
-        # Windows 或其他不支持信号处理的系统
-        pass
-
-    # 主线程等待任一进程退出或 Ctrl+C
+    # 跨平台退出处理：KeyboardInterrupt 是 Windows 和 Unix 都可靠支持的方式
     try:
         stop_event.wait()
     except KeyboardInterrupt:
         stop_event.set()
+    finally:
         _terminate_all()
