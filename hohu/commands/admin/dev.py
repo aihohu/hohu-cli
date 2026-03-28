@@ -98,7 +98,7 @@ def dev(
         console.print(f"[dim]已安装组件: {available_components}[/dim]")
         return
 
-    processes = []
+    processes: dict[str, subprocess.Popen] = {}
     console.print(f"🚀 [bold magenta]Starting: {', '.join(to_run)}[/bold magenta]\n")
     console.print("💡 [dim]Press Ctrl+C to stop all services[/dim]\n")
 
@@ -133,7 +133,7 @@ def dev(
                 bufsize=1,  # 行缓冲
                 env=None,  # 可以按需传入 os.environ
             )
-            processes.append(process)
+            processes[item] = process
 
             # 为每个进程启动一个守护线程来读取输出
             t = threading.Thread(
@@ -150,20 +150,42 @@ def dev(
             console.print(f"[yellow]💡 {item} will be skipped.[/yellow]")
             continue
 
-    # 处理退出逻辑
-    def signal_handler(_sig, _frame):
-        """处理 Ctrl+C 信号"""
+    if not processes:
+        console.print("[yellow]No processes were started.[/yellow]")
+        return
+
+    stop_event = threading.Event()
+
+    def _terminate_all():
+        """终止所有子进程"""
         console.print("\n[bold yellow]正在停止所有服务...[/bold yellow]")
-        for p in processes:
+        for name, p in processes.items():
             p.terminate()
-            # 等待进程终止，避免僵尸进程
             try:
                 p.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                # 如果进程在5秒内没有终止，强制杀死
                 p.kill()
                 p.wait()
-        sys.exit(0)
+
+    def monitor_worker(name: str, p: subprocess.Popen):
+        """监视单个进程，退出时立即通知主线程"""
+        p.wait()
+        if not stop_event.is_set():
+            if p.returncode is not None and p.returncode != 0:
+                console.print(
+                    f"[red]❌ Process {name} exited with code {p.returncode}[/red]"
+                )
+            stop_event.set()
+
+    # 为每个进程启动监视线程
+    for name, p in processes.items():
+        t = threading.Thread(target=monitor_worker, args=(name, p), daemon=True)
+        t.start()
+
+    def signal_handler(_sig, _frame):
+        """处理 Ctrl+C 信号"""
+        stop_event.set()
+        _terminate_all()
 
     # 跨平台信号处理：Unix 系统使用信号处理器，Windows 主要依赖 KeyboardInterrupt
     try:
@@ -172,15 +194,9 @@ def dev(
         # Windows 或其他不支持信号处理的系统
         pass
 
-    # 保持主线程运行
+    # 主线程等待任一进程退出或 Ctrl+C
     try:
-        for p in processes:
-            p.wait()
-            # 检查进程退出状态
-            if p.returncode != 0:
-                console.print(
-                    f"[red]❌ Process {p} exited with code {p.returncode}[/red]"
-                )
+        stop_event.wait()
     except KeyboardInterrupt:
-        # Windows 和 Unix 系统都支持 KeyboardInterrupt
-        signal_handler(None, None)
+        stop_event.set()
+        _terminate_all()
