@@ -4,17 +4,12 @@ import questionary
 import typer
 from rich.console import Console
 
+from hohu.config.components import get_component_folder, get_component_repo
 from hohu.i18n import i18n
 from hohu.utils.process import CommandNotFoundError, run_command
 from hohu.utils.project import ProjectManager
 
 console = Console()
-
-REPOS = {
-    "Backend": "https://github.com/aihohu/hohu-admin.git",
-    "Frontend": "https://github.com/aihohu/hohu-admin-web.git",
-    "App": "https://github.com/aihohu/hohu-admin-app.git",
-}
 
 
 def create(project_name: str = typer.Argument("hohu-admin")):
@@ -41,15 +36,12 @@ def create(project_name: str = typer.Argument("hohu-admin")):
         ProjectManager.mark_project(root, project_name, choices)
 
         for item in choices:
-            folder = {
-                "Backend": "hohu-admin",
-                "Frontend": "hohu-admin-web",
-                "App": "hohu-admin-app",
-            }[item]
+            folder = get_component_folder(item)
+            repo = get_component_repo(item)
             console.print(f"🚚 [blue]{i18n.t('cloning')} {item}...[/blue]")
             try:
                 run_command(
-                    ["git", "clone", REPOS[item], str(root / folder)],
+                    ["git", "clone", repo, str(root / folder)],
                     context=f"cloning {item} repository",
                 )
             except (CommandNotFoundError, typer.Exit):

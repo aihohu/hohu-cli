@@ -7,6 +7,11 @@ import threading
 import typer
 from rich.console import Console
 
+from hohu.config.components import (
+    get_component_color,
+    get_component_dev_cmd,
+    get_component_folder,
+)
 from hohu.i18n import i18n
 from hohu.utils.project import ProjectManager
 
@@ -97,39 +102,21 @@ def dev(
     console.print(f"🚀 [bold magenta]Starting: {', '.join(to_run)}[/bold magenta]\n")
     console.print("💡 [dim]Press Ctrl+C to stop all services[/dim]\n")
 
-    # 定义组件配置
-    config_map = {
-        "Backend": {
-            "folder": "hohu-admin",
-            "cmd": ["uv", "run", "fastapi", "dev", "app/main.py"],
-            "color": "green",
-        },
-        "Frontend": {
-            "folder": "hohu-admin-web",
-            "cmd": ["pnpm", "dev"],
-            "color": "cyan",
-        },
-        "App": {
-            "folder": "hohu-admin-app",
-            "cmd": ["pnpm", "dev" if target == "h5" else f"dev:{target}"],
-            "color": "yellow",
-        },
-    }
-
     # 启动进程
     for item in to_run:
-        conf = config_map.get(item)
-        if not conf:
-            continue
+        folder = get_component_folder(item)
+        dev_cmd = get_component_dev_cmd(item, target)
+        color = get_component_color(item)
 
-        cwd = root / conf["folder"]
+        cwd = root / folder
+
         if not cwd.exists():
             console.print(f"[red]目录不存在: {cwd}[/red]")
             continue
 
         try:
             # 检查命令是否存在
-            command_name = conf["cmd"][0]
+            command_name = dev_cmd[0]
             if not shutil.which(command_name):
                 console.print(
                     f"[bold red]❌ {i18n.t('cmd_not_found').format(command_name)}[/bold red]"
@@ -139,7 +126,7 @@ def dev(
 
             # 开启子进程，并重定向 stdout 和 stderr
             process = subprocess.Popen(
-                conf["cmd"],
+                dev_cmd,
                 cwd=cwd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,  # 合并错误流
@@ -151,7 +138,7 @@ def dev(
             # 为每个进程启动一个守护线程来读取输出
             t = threading.Thread(
                 target=log_worker,
-                args=(process.stdout, item, conf["color"]),
+                args=(process.stdout, item, color),
                 daemon=True,
             )
             t.start()
