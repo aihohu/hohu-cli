@@ -31,14 +31,10 @@ def get_custom_repo(
         return custom_repo
 
     # 尝试从配置文件读取自定义仓库地址
-    try:
-        from hohu.config import load_config
-        config = load_config()
-        repo_key = f"{component.lower()}_repo"
-        if repo_key in config:
-            return config[repo_key]
-    except ImportError:
-        pass
+    config = load_config()
+    repo_key = f"{component.lower()}_repo"
+    if repo_key in config:
+        return config[repo_key]
 
     # 返回默认仓库地址
     return get_component_repo(component)
