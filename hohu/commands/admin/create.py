@@ -4,6 +4,7 @@ import questionary
 import typer
 from rich.console import Console
 
+from hohu.config import load_config
 from hohu.config.components import get_component_folder, get_component_repo
 from hohu.i18n import i18n
 from hohu.utils.process import CommandNotFoundError, run_command
@@ -12,7 +13,43 @@ from hohu.utils.project import ProjectManager
 console = Console()
 
 
-def create(project_name: str = typer.Argument("hohu-admin")):
+def get_custom_repo(
+    component: str,
+    custom_repo: str | None = None,
+) -> str:
+    """
+    获取组件的仓库地址，支持自定义
+
+    Args:
+        component: 组件名称
+        custom_repo: 用户指定的自定义仓库地址
+
+    Returns:
+        str: 仓库地址
+    """
+    if custom_repo:
+        return custom_repo
+
+    # 尝试从配置文件读取自定义仓库地址
+    try:
+        from hohu.config import load_config
+        config = load_config()
+        repo_key = f"{component.lower()}_repo"
+        if repo_key in config:
+            return config[repo_key]
+    except ImportError:
+        pass
+
+    # 返回默认仓库地址
+    return get_component_repo(component)
+
+
+def create(
+    project_name: str = typer.Argument("hohu-admin"),
+    repo: str = typer.Option(
+        None, "--repo", "-r", help="自定义模板仓库地址"
+    ),
+):
     """Create a new project directory and clone templates"""
     root = Path.cwd() / project_name
     if root.exists():
@@ -37,11 +74,11 @@ def create(project_name: str = typer.Argument("hohu-admin")):
 
         for item in choices:
             folder = get_component_folder(item)
-            repo = get_component_repo(item)
+            item_repo = get_custom_repo(item, repo)
             console.print(f"🚚 [blue]{i18n.t('cloning')} {item}...[/blue]")
             try:
                 run_command(
-                    ["git", "clone", repo, str(root / folder)],
+                    ["git", "clone", item_repo, str(root / folder)],
                     context=f"cloning {item} repository",
                 )
             except (CommandNotFoundError, typer.Exit):
