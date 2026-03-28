@@ -65,3 +65,5 @@ hohu/
 - pytest，测试文件 `tests/test_*.py`
 - 核心模块需要 mock subprocess（`run_command` 内部直接 `typer.Exit`）
 - 注意不要定义与 pytest 内置同名的 fixture（如 `tmp_path`）
+
+每次完成代码编写，使用 `uv run ruff format .` 格式化代码
