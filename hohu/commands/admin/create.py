@@ -50,13 +50,15 @@ def create(project_name: str = typer.Argument("hohu-admin")):
             try:
                 run_command(
                     ["git", "clone", REPOS[item], str(root / folder)],
-                    context=f"cloning {item} repository"
+                    context=f"cloning {item} repository",
                 )
             except (CommandNotFoundError, typer.Exit):
                 # 这些异常已经在 run_command 中处理过
                 raise
             except Exception as e:
-                console.print(f"[red]❌ {i18n.t('git_clone_failed')} for {item}: {e}[/red]")
+                console.print(
+                    f"[red]❌ {i18n.t('git_clone_failed')} for {item}: {e}[/red]"
+                )
                 raise typer.Exit(1)
 
         console.print(

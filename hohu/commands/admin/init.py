@@ -44,11 +44,20 @@ def init():
 
             try:
                 if fallback_cmd:
-                    run_with_fallback(install_cmd, fallback_cmd, cwd=path, context=f"installing {item} dependencies")
+                    run_with_fallback(
+                        install_cmd,
+                        fallback_cmd,
+                        cwd=path,
+                        context=f"installing {item} dependencies",
+                    )
                 else:
-                    run_command(install_cmd, cwd=path, context=f"installing {item} dependencies")
+                    run_command(
+                        install_cmd, cwd=path, context=f"installing {item} dependencies"
+                    )
             except (CommandNotFoundError, typer.Exit):
-                console.print(f"[red]❌ {i18n.t('dependency_install_failed')} for {item}[/red]")
+                console.print(
+                    f"[red]❌ {i18n.t('dependency_install_failed')} for {item}[/red]"
+                )
                 raise typer.Exit(1)
 
             init_script = path / "scripts" / "init.py"
@@ -60,10 +69,12 @@ def init():
                     run_command(
                         ["python", "scripts/init.py"],
                         cwd=path,
-                        context=f"running init script for {item}"
+                        context=f"running init script for {item}",
                     )
                 except (CommandNotFoundError, typer.Exit):
-                    console.print(f"[red]❌ {i18n.t('init_script_failed')} for {item}[/red]")
+                    console.print(
+                        f"[red]❌ {i18n.t('init_script_failed')} for {item}[/red]"
+                    )
                     raise typer.Exit(1)
             else:
                 console.print(
@@ -82,11 +93,20 @@ def init():
 
             try:
                 if fallback_cmd:
-                    run_with_fallback(install_cmd, fallback_cmd, cwd=path, context=f"installing {item} dependencies")
+                    run_with_fallback(
+                        install_cmd,
+                        fallback_cmd,
+                        cwd=path,
+                        context=f"installing {item} dependencies",
+                    )
                 else:
-                    run_command(install_cmd, cwd=path, context=f"installing {item} dependencies")
+                    run_command(
+                        install_cmd, cwd=path, context=f"installing {item} dependencies"
+                    )
             except (CommandNotFoundError, typer.Exit):
-                console.print(f"[red]❌ {i18n.t('dependency_install_failed')} for {item}[/red]")
+                console.print(
+                    f"[red]❌ {i18n.t('dependency_install_failed')} for {item}[/red]"
+                )
                 raise typer.Exit(1)
 
     console.print(

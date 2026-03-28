@@ -16,6 +16,7 @@ console = Console()
 
 class ProcessError(Exception):
     """进程执行错误自定义异常"""
+
     def __init__(self, command: list[str], returncode: int, context: str = ""):
         self.command = command
         self.returncode = returncode
@@ -33,6 +34,7 @@ class ProcessError(Exception):
 
 class CommandNotFoundError(Exception):
     """命令未找到异常"""
+
     def __init__(self, command: str):
         self.command = command
         super().__init__(f"Command not found: {command}")
@@ -137,7 +139,9 @@ def run_command_silent(
     Returns:
         subprocess.CompletedProcess: 命令执行结果
     """
-    return run_command(command, cwd, check, capture_output=True, context=context, show_command=False)
+    return run_command(
+        command, cwd, check, capture_output=True, context=context, show_command=False
+    )
 
 
 def run_with_fallback(
@@ -179,7 +183,7 @@ def _handle_process_error(error: ProcessError, stderr: str | None) -> None:
 
     # 如果有 stderr 输出，显示最后几行
     if stderr:
-        stderr_lines = stderr.strip().split('\n')
+        stderr_lines = stderr.strip().split("\n")
         if stderr_lines:
             console.print("[red]Error output:[/red]")
             # 显示最后 5 行错误信息
@@ -217,11 +221,11 @@ def _show_error_suggestions(error: ProcessError) -> None:
     command = error.command[0] if error.command else "unknown"
 
     suggestions = {
-        'git': "Please check your internet connection and Git configuration.",
-        'uv': "Please ensure uv is installed: https://docs.astral.sh/uv/getting-started/installation/",
-        'pnpm': "Please install pnpm: npm install -g pnpm",
-        'npm': "Please install Node.js and npm: https://nodejs.org/",
-        'python': "Please ensure Python is installed and in your PATH.",
+        "git": "Please check your internet connection and Git configuration.",
+        "uv": "Please ensure uv is installed: https://docs.astral.sh/uv/getting-started/installation/",
+        "pnpm": "Please install pnpm: npm install -g pnpm",
+        "npm": "Please install Node.js and npm: https://nodejs.org/",
+        "python": "Please ensure Python is installed and in your PATH.",
     }
 
     suggestion = suggestions.get(command)
@@ -241,9 +245,9 @@ def _get_installation_suggestion(command: str) -> str:
         str: 安装建议
     """
     suggestions = {
-        'git': 'Install Git: https://git-scm.com/downloads',
-        'uv': 'Install uv: https://docs.astral.sh/uv/getting-started/installation/',
-        'pnpm': 'Install pnpm: npm install -g pnpm',
-        'npm': 'Install Node.js: https://nodejs.org/',
+        "git": "Install Git: https://git-scm.com/downloads",
+        "uv": "Install uv: https://docs.astral.sh/uv/getting-started/installation/",
+        "pnpm": "Install pnpm: npm install -g pnpm",
+        "npm": "Install Node.js: https://nodejs.org/",
     }
     return suggestions.get(command, f"Please install {command}")
