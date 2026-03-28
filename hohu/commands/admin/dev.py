@@ -165,13 +165,25 @@ def dev(
 
     # 处理退出逻辑
     def signal_handler(_sig, _frame):
+        """处理 Ctrl+C 信号"""
         console.print("\n[bold yellow]正在停止所有服务...[/bold yellow]")
         for p in processes:
             p.terminate()
+            # 等待进程终止，避免僵尸进程
+            try:
+                p.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                # 如果进程在5秒内没有终止，强制杀死
+                p.kill()
+                p.wait()
         sys.exit(0)
 
-    # 注册 Ctrl+C 信号
-    signal.signal(signal.SIGINT, signal_handler)
+    # 跨平台信号处理：Unix 系统使用信号处理器，Windows 主要依赖 KeyboardInterrupt
+    try:
+        signal.signal(signal.SIGINT, signal_handler)
+    except (AttributeError, ValueError):
+        # Windows 或其他不支持信号处理的系统
+        pass
 
     # 保持主线程运行
     try:
@@ -183,4 +195,5 @@ def dev(
                     f"[red]❌ Process {p} exited with code {p.returncode}[/red]"
                 )
     except KeyboardInterrupt:
+        # Windows 和 Unix 系统都支持 KeyboardInterrupt
         signal_handler(None, None)
