@@ -12,7 +12,15 @@
   "installing_deps": "正在安装依赖...",
   "init_success": "所有环境初始化就绪！",
   "init_failed": "初始化失败，请检查网络或工具安装情况。",
-  "cmd_not_found": "未找到命令: ",
+  "cmd_not_found": "未找到命令: {}",
   "dir_exists": "错误: 目录已存在: ",
-  "dev_start": "启动开发环境"
+  "dev_start": "启动开发环境",
+  "command_failed": "命令执行失败: {}",
+  "subprocess_error": "子进程错误: {}",
+  "git_clone_failed": "克隆仓库失败",
+  "dependency_install_failed": "依赖安装失败",
+  "init_script_failed": "运行初始化脚本失败",
+  "process_start_failed": "启动进程失败",
+  "check_network": "请检查网络连接",
+  "check_permissions": "请检查文件/目录权限"
 }

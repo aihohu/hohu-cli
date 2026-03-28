@@ -1,4 +1,3 @@
-import subprocess
 from pathlib import Path
 
 import questionary
@@ -6,6 +5,7 @@ import typer
 from rich.console import Console
 
 from hohu.i18n import i18n
+from hohu.utils.process import CommandNotFoundError, run_command
 from hohu.utils.project import ProjectManager
 
 console = Console()
@@ -47,12 +47,25 @@ def create(project_name: str = typer.Argument("hohu-admin")):
                 "App": "hohu-admin-app",
             }[item]
             console.print(f"🚚 [blue]{i18n.t('cloning')} {item}...[/blue]")
-            subprocess.run(
-                ["git", "clone", REPOS[item], str(root / folder)], check=True
-            )
+            try:
+                run_command(
+                    ["git", "clone", REPOS[item], str(root / folder)],
+                    context=f"cloning {item} repository"
+                )
+            except (CommandNotFoundError, typer.Exit):
+                # 这些异常已经在 run_command 中处理过
+                raise
+            except Exception as e:
+                console.print(f"[red]❌ {i18n.t('git_clone_failed')} for {item}: {e}[/red]")
+                raise typer.Exit(1)
 
         console.print(
             f"\n✨ {i18n.t('success_msg')} [bold cyan]cd {project_name} && hohu admin init[/bold cyan]"
         )
+    except (CommandNotFoundError, typer.Exit):
+        # 这些异常已经在 run_command 中处理过
+        raise
     except Exception as e:
-        console.print(f"[red]Failed: {e}[/red]")
+        console.print(f"[red]❌ {i18n.t('init_failed')}[/red]")
+        console.print(f"[red]Unexpected error: {e}[/red]")
+        raise typer.Exit(1)

@@ -1,3 +1,4 @@
+import shutil
 import signal
 import subprocess
 import sys
@@ -25,7 +26,8 @@ def log_worker(pipe, prefix, color):
                     # 使用 Rich 打印带颜色前缀的日志
                     console.print(f"[{color}][{prefix}][/{color}] {message}")
     except Exception as e:
-        console.print(f"[red]日志流异常 ({prefix}): {e}[/red]")
+        console.print(f"[red]❌ Log stream error ({prefix}): {e}[/red]")
+        console.print(f"[yellow]💡 Process {prefix} may have crashed.[/yellow]")
 
 
 def dev(
@@ -126,6 +128,13 @@ def dev(
             continue
 
         try:
+            # 检查命令是否存在
+            command_name = conf["cmd"][0]
+            if not shutil.which(command_name):
+                console.print(f"[bold red]❌ {i18n.t('cmd_not_found').format(command_name)}[/bold red]")
+                console.print(f"[yellow]💡 Process {item} will be skipped.[/yellow]")
+                continue
+
             # 开启子进程，并重定向 stdout 和 stderr
             process = subprocess.Popen(
                 conf["cmd"],
@@ -146,7 +155,9 @@ def dev(
             t.start()
 
         except Exception as e:
-            console.print(f"[bold red]无法启动 {item}: {e}[/bold red]")
+            console.print(f"[bold red]❌ {i18n.t('process_start_failed')} {item}: {e}[/bold red]")
+            console.print(f"[yellow]💡 {item} will be skipped.[/yellow]")
+            continue
 
     # 处理退出逻辑
     def signal_handler(_sig, _frame):
@@ -162,5 +173,8 @@ def dev(
     try:
         for p in processes:
             p.wait()
+            # 检查进程退出状态
+            if p.returncode != 0:
+                console.print(f"[red]❌ Process {p} exited with code {p.returncode}[/red]")
     except KeyboardInterrupt:
         signal_handler(None, None)

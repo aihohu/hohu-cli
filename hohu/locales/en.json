@@ -12,7 +12,15 @@
   "installing_deps": "Installing dependencies...",
   "init_success": "All environments initialized successfully!",
   "init_failed": "Initialization failed, please check your network or tool installations.",
-  "cmd_not_found": "Command not found: ",
+  "cmd_not_found": "Command not found: {}",
   "dir_exists": "Error: Directory already exists: ",
-  "dev_start": "Start the development environment "
+  "dev_start": "Start the development environment ",
+  "command_failed": "Command execution failed: {}",
+  "subprocess_error": "Subprocess error: {}",
+  "git_clone_failed": "Failed to clone repository",
+  "dependency_install_failed": "Failed to install dependencies",
+  "init_script_failed": "Failed to run initialization script",
+  "process_start_failed": "Failed to start process",
+  "check_network": "Please check your network connection",
+  "check_permissions": "Please check file/directory permissions"
 }
