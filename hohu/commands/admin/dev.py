@@ -55,15 +55,15 @@ def dev(
     info = ProjectManager.get_info(root)
     # 获取当前项目拥有的组件
     available_components = info["components"]
-    # 定义简写映射表 (全小写)
+    # 定义简写映射表 (全小写 -> 标准组件名)
     alias_map = {
-        "be": "backend",
-        "backend": "backend",
-        "admin": "backend",
-        "fe": "frontend",
-        "frontend": "frontend",
-        "web": "frontend",
-        "app": "app",
+        "be": "Backend",
+        "backend": "Backend",
+        "admin": "Backend",
+        "fe": "Frontend",
+        "frontend": "Frontend",
+        "web": "Frontend",
+        "app": "App",
     }
 
     def normalize(names: list[str]) -> set:
@@ -72,9 +72,7 @@ def dev(
         for n in names:
             name_low = n.lower()
             if name_low in alias_map:
-                # 转换回标准的首字母大写格式以匹配 available_components
-                standard_name = alias_map[name_low].capitalize()
-                normalized.add(standard_name)
+                normalized.add(alias_map[name_low])
         return normalized
 
     # 处理过滤逻辑
