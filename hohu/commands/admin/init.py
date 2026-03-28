@@ -2,11 +2,10 @@ import typer
 from rich.console import Console
 
 from hohu.config.components import (
+    get_component_fallback_cmd,
     get_component_folder,
     get_component_install_cmd,
-    get_component_fallback_cmd,
 )
-
 from hohu.i18n import i18n
 from hohu.utils.process import CommandNotFoundError, run_command, run_with_fallback
 from hohu.utils.project import ProjectManager
