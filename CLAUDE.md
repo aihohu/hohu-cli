@@ -36,9 +36,9 @@ hohu/
 ├── commands/
 │   ├── system.py            # system info / system lang
 │   └── admin/
-│       ├── create.py        # admin create — 创建项目 + 克隆模板
-│       ├── init.py          # admin init — 安装依赖
-│       └── dev.py           # admin dev — 多进程开发服务器
+│       ├── create.py        # create — 创建项目 + 克隆模板
+│       ├── init.py          # init — 安装依赖
+│       └── dev.py           # dev — 多进程开发服务器
 ├── utils/
 │   ├── process.py           # 子进程执行与错误处理
 │   └── project.py           # .hohu 项目标记检测
@@ -70,3 +70,5 @@ hohu/
 - 注意不要定义与 pytest 内置同名的 fixture（如 `tmp_path`）
 
 每次完成代码编写，使用 `uv run ruff format .` 格式化代码
+
+所有测试/运行python 都需在虚拟环境中 执行

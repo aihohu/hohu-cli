@@ -38,7 +38,7 @@ pip install hohu
 ### Create a Project
 
 ```bash
-hohu admin create my-project
+hohu create my-project
 ```
 
 Select components (Backend / Frontend / App) interactively. Defaults to `hohu-admin` if no name is given.
@@ -47,7 +47,7 @@ Select components (Backend / Frontend / App) interactively. Defaults to `hohu-ad
 
 ```bash
 cd my-project
-hohu admin init
+hohu init
 ```
 
 Automatically detects project config and installs all dependencies.
@@ -60,13 +60,13 @@ hohu lang
 
 ## Development Server
 
-`hohu admin dev` launches all services in a single terminal with merged, color-coded log output.
+`hohu dev` launches all services in a single terminal with merged, color-coded log output.
 
 ```bash
-hohu admin dev          # Start all components
-hohu admin dev -o be    # Backend only
-hohu admin dev -s app   # Frontend + Backend, skip App
-hohu admin dev -t mp    # App in WeChat Mini Program mode
+hohu dev          # Start all components
+hohu dev -o be    # Backend only
+hohu dev -s app   # Frontend + Backend, skip App
+hohu dev -t mp    # App in WeChat Mini Program mode
 ```
 
 ### Options
@@ -93,9 +93,9 @@ Press `Ctrl+C` for graceful shutdown — all child processes are terminated clea
 
 | Command | Description |
 |---------|-------------|
-| `hohu admin create [NAME]` | Create project and clone repo templates |
-| `hohu admin init` | Install all sub-project dependencies |
-| `hohu admin dev` | Start development server |
+| `hohu create [NAME]` | Create project and clone repo templates |
+| `hohu init` | Install all sub-project dependencies |
+| `hohu dev` | Start development server |
 | `hohu lang` | Switch display language (zh / en / auto) |
 | `hohu info` | View current CLI configuration |
 | `hohu --version` | Show version |

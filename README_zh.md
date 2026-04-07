@@ -38,7 +38,7 @@ pip install hohu
 ### 创建项目
 
 ```bash
-hohu admin create my-project
+hohu create my-project
 ```
 
 交互式选择组件（后端 / 前端 / App）。不提供名称时默认为 `hohu-admin`。
@@ -47,7 +47,7 @@ hohu admin create my-project
 
 ```bash
 cd my-project
-hohu admin init
+hohu init
 ```
 
 自动识别项目配置并安装全部依赖。
@@ -60,13 +60,13 @@ hohu lang
 
 ## 开发服务器
 
-`hohu admin dev` 在单一终端内启动所有服务，日志合并输出并按颜色区分。
+`hohu dev` 在单一终端内启动所有服务，日志合并输出并按颜色区分。
 
 ```bash
-hohu admin dev          # 启动全部组件
-hohu admin dev -o be    # 仅后端
-hohu admin dev -s app   # 前端 + 后端，跳过 App
-hohu admin dev -t mp    # App 微信小程序模式
+hohu dev          # 启动全部组件
+hohu dev -o be    # 仅后端
+hohu dev -s app   # 前端 + 后端，跳过 App
+hohu dev -t mp    # App 微信小程序模式
 ```
 
 ### 参数
@@ -93,9 +93,9 @@ hohu admin dev -t mp    # App 微信小程序模式
 
 | 命令 | 说明 |
 |------|------|
-| `hohu admin create [NAME]` | 创建项目并克隆仓库模板 |
-| `hohu admin init` | 安装所有子项目依赖 |
-| `hohu admin dev` | 启动开发服务器 |
+| `hohu create [NAME]` | 创建项目并克隆仓库模板 |
+| `hohu init` | 安装所有子项目依赖 |
+| `hohu dev` | 启动开发服务器 |
 | `hohu lang` | 切换显示语言（zh / en / auto） |
 | `hohu info` | 查看当前 CLI 配置 |
 | `hohu --version` | 显示版本号 |
