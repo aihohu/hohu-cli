@@ -2,7 +2,9 @@ import typer
 from rich.console import Console
 
 from hohu import __version__
-from hohu.commands.admin import admin_app
+from hohu.commands.admin.create import create
+from hohu.commands.admin.dev import dev
+from hohu.commands.admin.init import init
 from hohu.commands.system import set_language, show_info, system_app
 
 app = typer.Typer(name="hohu", help="HoHu CLI Tool", no_args_is_help=True)
@@ -35,7 +37,10 @@ def main(
     pass
 
 
-app.add_typer(admin_app, name="admin")
+app.command(name="create")(create)
+app.command(name="init")(init)
+app.command(name="dev")(dev)
+
 app.add_typer(system_app, name="system")
 
 app.command(name="lang")(set_language)
