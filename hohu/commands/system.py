@@ -4,7 +4,7 @@ from rich.console import Console
 from rich.table import Table
 
 from hohu import __version__
-from hohu.config import CONFIG_FILE, load_config, save_config
+from hohu.config.settings import CONFIG_FILE, load_config, save_config
 from hohu.i18n import i18n
 
 console = Console()

@@ -10,6 +10,9 @@ hohu-cli 是一个基于 Typer 的 Python CLI 工具（v0.1.3），为 hohu-admi
 # 安装依赖
 uv sync
 
+# 激活虚拟环境
+source .venv/bin/activate
+
 # 代码检查 + 格式化
 uv run ruff format .
 uv run ruff check --fix .
@@ -26,9 +29,9 @@ uv run hohu --help
 ```
 hohu/
 ├── main.py                  # CLI 入口（Typer app）
-├── config.py                # 全局用户配置（~/.hohu/config.json）
 ├── i18n.py                  # 国际化引擎（locales/*.json）
 ├── config/
+│   ├── settings.py          # 全局用户配置（~/.hohu/config.json）
 │   └── components.py        # 组件注册表（Backend/Frontend/App）
 ├── commands/
 │   ├── system.py            # system info / system lang

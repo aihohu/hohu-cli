@@ -4,8 +4,8 @@ import questionary
 import typer
 from rich.console import Console
 
-from hohu.config import load_config
 from hohu.config.components import get_component_folder, get_component_repo
+from hohu.config.settings import load_config
 from hohu.i18n import i18n
 from hohu.utils.process import CommandNotFoundError, run_command
 from hohu.utils.project import ProjectManager

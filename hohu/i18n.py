@@ -2,7 +2,7 @@ import json
 import locale
 from pathlib import Path
 
-from hohu.config import get_lang
+from hohu.config.settings import get_lang
 
 
 class I18n:
