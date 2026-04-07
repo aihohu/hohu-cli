@@ -12,6 +12,7 @@ COMPONENT_CONFIG = {
         "fallback_cmd": ["pip", "install", "-r", "requirements.txt"],
         "dev_cmd": ["uv", "run", "fastapi", "dev", "app/main.py"],
         "color": "green",
+        "init_script": "scripts/init.py",
     },
     "Frontend": {
         "folder": "hohu-admin-web",
@@ -129,6 +130,19 @@ def get_component_color(component_name: str) -> str:
         str: Rich颜色名称
     """
     return COMPONENT_CONFIG[component_name]["color"]
+
+
+def get_component_init_script(component_name: str) -> str | None:
+    """
+    获取指定组件的初始化脚本路径
+
+    Args:
+        component_name: 组件名称
+
+    Returns:
+        str | None: 初始化脚本相对路径，未配置则返回 None
+    """
+    return COMPONENT_CONFIG[component_name].get("init_script")
 
 
 def get_all_components() -> list[str]:
