@@ -85,7 +85,7 @@ def create(
                 raise typer.Exit(1)
 
         console.print(
-            f"\n✨ {i18n.t('success_msg')} [bold cyan]cd {project_name} && hohu admin init[/bold cyan]"
+            f"\n✨ {i18n.t('success_msg')} [bold cyan]cd {project_name} && hohu init[/bold cyan]"
         )
     except (CommandNotFoundError, typer.Exit):
         # 这些异常已经在 run_command 中处理过

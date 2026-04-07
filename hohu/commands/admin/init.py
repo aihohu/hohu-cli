@@ -78,5 +78,5 @@ def init():
                 )
 
     console.print(
-        f"\n✅ {i18n.t('init_success')} {i18n.t('dev_start')}: [bold cyan]hohu admin dev[/bold cyan]"
+        f"\n✅ {i18n.t('init_success')} {i18n.t('dev_start')}: [bold cyan]hohu dev[/bold cyan]"
     )
