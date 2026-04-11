@@ -22,5 +22,13 @@
   "init_script_failed": "运行初始化脚本失败",
   "process_start_failed": "启动进程失败",
   "check_network": "请检查网络连接",
-  "check_permissions": "请检查文件/目录权限"
+  "check_permissions": "请检查文件/目录权限",
+  "dev_no_components": "没有需要启动的组件。请检查 --only 或 --skip 参数。",
+  "dev_installed_components": "已安装组件: {}",
+  "dev_starting": "正在启动: {}",
+  "dev_press_ctrl_c": "按 Ctrl+C 停止所有服务",
+  "dev_dir_not_found": "目录不存在: {}",
+  "dev_stopping": "正在停止所有服务...",
+  "dev_process_exited": "进程 {} 已退出，退出码: {}",
+  "dev_no_processes": "没有进程被启动。"
 }

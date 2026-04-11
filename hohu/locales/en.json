@@ -22,5 +22,13 @@
   "init_script_failed": "Failed to run initialization script",
   "process_start_failed": "Failed to start process",
   "check_network": "Please check your network connection",
-  "check_permissions": "Please check file/directory permissions"
+  "check_permissions": "Please check file/directory permissions",
+  "dev_no_components": "No components to start. Check --only or --skip flags.",
+  "dev_installed_components": "Installed components: {}",
+  "dev_starting": "Starting: {}",
+  "dev_press_ctrl_c": "Press Ctrl+C to stop all services",
+  "dev_dir_not_found": "Directory not found: {}",
+  "dev_stopping": "Stopping all services...",
+  "dev_process_exited": "Process {} exited with code {}",
+  "dev_no_processes": "No processes were started."
 }

@@ -88,15 +88,17 @@ def dev(
         to_run.append(item)
 
     if not to_run:
+        console.print(f"[yellow]{i18n.t('dev_no_components')}[/yellow]")
         console.print(
-            "[yellow]没有需要启动的组件。请检查 --only 或 --skip 参数。[/yellow]"
+            f"[dim]{i18n.t('dev_installed_components').format(available_components)}[/dim]"
         )
-        console.print(f"[dim]已安装组件: {available_components}[/dim]")
         return
 
     processes: dict[str, subprocess.Popen] = {}
-    console.print(f"🚀 [bold magenta]Starting: {', '.join(to_run)}[/bold magenta]\n")
-    console.print("💡 [dim]Press Ctrl+C to stop all services[/dim]\n")
+    console.print(
+        f"[bold magenta]{i18n.t('dev_starting').format(', '.join(to_run))}[/bold magenta]\n"
+    )
+    console.print(f"[dim]{i18n.t('dev_press_ctrl_c')}[/dim]\n")
 
     # 启动进程
     for item in to_run:
@@ -107,7 +109,7 @@ def dev(
         cwd = root / folder
 
         if not cwd.exists():
-            console.print(f"[red]目录不存在: {cwd}[/red]")
+            console.print(f"[red]{i18n.t('dev_dir_not_found').format(cwd)}[/red]")
             continue
 
         try:
@@ -147,14 +149,14 @@ def dev(
             continue
 
     if not processes:
-        console.print("[yellow]No processes were started.[/yellow]")
+        console.print(f"[yellow]{i18n.t('dev_no_processes')}[/yellow]")
         return
 
     stop_event = threading.Event()
 
     def _terminate_all():
         """终止所有子进程"""
-        console.print("\n[bold yellow]正在停止所有服务...[/bold yellow]")
+        console.print(f"\n[bold yellow]{i18n.t('dev_stopping')}[/bold yellow]")
         for _name, p in processes.items():
             p.terminate()
             try:
@@ -169,7 +171,11 @@ def dev(
         if not stop_event.is_set():
             if p.returncode is not None and p.returncode != 0:
                 console.print(
-                    f"[red]❌ Process {name} exited with code {p.returncode}[/red]"
+                    f"[red]{i18n.t('dev_process_exited').format(name, p.returncode)}[/red]"
+                )
+            else:
+                console.print(
+                    f"[green]{i18n.t('dev_process_exited').format(name, p.returncode)}[/green]"
                 )
             stop_event.set()
 
