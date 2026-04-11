@@ -1,4 +1,3 @@
-import shutil
 import subprocess
 import threading
 
@@ -11,6 +10,7 @@ from hohu.config.components import (
     get_component_folder,
 )
 from hohu.i18n import i18n
+from hohu.utils.process import resolve_command
 from hohu.utils.project import ProjectManager
 
 console = Console()
@@ -113,23 +113,22 @@ def dev(
             continue
 
         try:
-            # 检查命令是否存在
-            command_name = dev_cmd[0]
-            if not shutil.which(command_name):
+            # 解析命令路径（Windows 兼容 .cmd/.bat）
+            resolved_cmd = resolve_command(dev_cmd)
+            if not resolved_cmd:
                 console.print(
-                    f"[bold red]❌ {i18n.t('cmd_not_found').format(command_name)}[/bold red]"
+                    f"[bold red]❌ {i18n.t('cmd_not_found').format(dev_cmd[0])}[/bold red]"
                 )
                 console.print(f"[yellow]💡 Process {item} will be skipped.[/yellow]")
                 continue
 
             # 开启子进程，并重定向 stdout 和 stderr
             process = subprocess.Popen(
-                dev_cmd,
+                resolved_cmd,
                 cwd=cwd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,  # 合并错误流
-                bufsize=1,  # 行缓冲
-                env=None,  # 可以按需传入 os.environ
+                bufsize=0,  # 无缓冲，实时读取
             )
             processes[item] = process
 

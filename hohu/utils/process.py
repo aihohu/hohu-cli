@@ -58,6 +58,22 @@ def check_command_exists(command: str) -> bool:
     return True
 
 
+def resolve_command(command: list[str]) -> list[str] | None:
+    """
+    解析命令的完整路径，兼容 Windows .cmd/.bat 文件
+
+    Args:
+        command: 命令列表，如 ['pnpm', 'dev']
+
+    Returns:
+        list[str] | None: 解析后的命令列表，命令不存在则返回 None
+    """
+    resolved = shutil.which(command[0])
+    if not resolved:
+        return None
+    return [resolved, *command[1:]]
+
+
 def run_command(
     command: list[str],
     cwd: Path | None = None,
@@ -86,9 +102,9 @@ def run_command(
         typer.Exit: 用于优雅退出 CLI
     """
     # Windows 兼容：解析 .cmd/.bat 文件（如 pnpm.cmd、npm.cmd）
-    resolved = shutil.which(command[0])
+    resolved = resolve_command(command)
     if resolved:
-        command = [resolved, *command[1:]]
+        command = resolved
 
     if show_command:
         cmd_str = " ".join(command)
