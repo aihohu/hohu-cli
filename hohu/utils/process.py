@@ -85,6 +85,11 @@ def run_command(
         ProcessError: 命令执行失败（当 check=True 时）
         typer.Exit: 用于优雅退出 CLI
     """
+    # Windows 兼容：解析 .cmd/.bat 文件（如 pnpm.cmd、npm.cmd）
+    resolved = shutil.which(command[0])
+    if resolved:
+        command = [resolved, *command[1:]]
+
     if show_command:
         cmd_str = " ".join(command)
         if cwd:
