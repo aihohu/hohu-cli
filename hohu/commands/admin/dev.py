@@ -1,3 +1,4 @@
+import os
 import subprocess
 import threading
 
@@ -123,12 +124,15 @@ def dev(
                 continue
 
             # 开启子进程，并重定向 stdout 和 stderr
+            env = os.environ.copy()
+            env["PYTHONUTF8"] = "1"
             process = subprocess.Popen(
                 resolved_cmd,
                 cwd=cwd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,  # 合并错误流
                 bufsize=0,  # 无缓冲，实时读取
+                env=env,
             )
             processes[item] = process
 
