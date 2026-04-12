@@ -35,6 +35,16 @@ uv tool install hohu
 pip install hohu
 ```
 
+### 更新
+
+```bash
+# uv
+uv tool upgrade hohu
+
+# pip
+pip install --upgrade hohu
+```
+
 ### 创建项目
 
 ```bash

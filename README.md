@@ -35,6 +35,16 @@ uv tool install hohu
 pip install hohu
 ```
 
+### Update
+
+```bash
+# uv
+uv tool upgrade hohu
+
+# pip
+pip install --upgrade hohu
+```
+
 ### Create a Project
 
 ```bash
