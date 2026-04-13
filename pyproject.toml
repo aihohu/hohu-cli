@@ -1,6 +1,6 @@
 [project]
 name = "hohu"
-version = "0.1.6"
+version = "0.1.7"
 description = "A full-stack project management CLI tool for Hohu Admin ecosystem."
 readme = "README.md"
 requires-python = ">=3.10"
