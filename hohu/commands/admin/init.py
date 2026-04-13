@@ -68,7 +68,7 @@ def init():
                 )
                 try:
                     run_command(
-                        ["python", init_script_rel],
+                        ["uv", "run", "python", init_script_rel],
                         cwd=path,
                         context=f"running init script for {item}",
                     )
