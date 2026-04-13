@@ -62,6 +62,11 @@ hohu init
 
 Automatically detects project config and installs all dependencies.
 
+> **Windows Users:** If `hohu init` fails with `EPERM: operation not permitted, symlink`, try the following:
+> 1. Enable **Developer Mode** in Windows Settings: **Settings → Update & Security → For developers → Developer Mode**. This allows symlink creation without admin privileges.
+> 2. Run your terminal as Administrator.
+> 3. Check your antivirus software (e.g., 360, Huorong) — some may block symlink creation. Try adding the project directory to the exclusion list or temporarily disabling real-time protection.
+
 ### Switch Language
 
 ```bash
