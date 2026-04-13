@@ -4,6 +4,7 @@
 
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import typer
@@ -114,12 +115,17 @@ def run_command(
             console.print(f"[dim]Executing: {cmd_str}[/dim]")
 
     try:
+        # Windows: use shell=True to preserve symlink privileges in subprocess
+        use_shell = sys.platform == "win32"
+        run_cmd = subprocess.list2cmdline(command) if use_shell else command
+
         result = subprocess.run(
-            command,
+            run_cmd,
             cwd=cwd,
             check=False,  # 我们手动检查
             capture_output=capture_output,
             text=True,
+            shell=use_shell,
         )
 
         if check and result.returncode != 0:
