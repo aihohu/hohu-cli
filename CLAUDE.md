@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-hohu-cli 是一个基于 Typer 的 Python CLI 工具（v0.1.3），为 hohu-admin 全栈生态提供项目脚手架、依赖安装和多进程开发服务器管理。
+hohu-cli 是一个基于 Typer 的 Python CLI 工具（v0.1.7），为 hohu-admin 全栈生态提供项目脚手架、依赖安装和多进程开发服务器管理。
 
 ## 常用命令
 
@@ -41,7 +41,8 @@ hohu/
 │       └── dev.py           # dev — 多进程开发服务器
 ├── utils/
 │   ├── process.py           # 子进程执行与错误处理
-│   └── project.py           # .hohu 项目标记检测
+│   ├── project.py           # .hohu 项目标记检测
+│   └── uv.py                # uv 自动安装
 └── locales/
     ├── en.json              # 英文翻译
     └── zh.json              # 中文翻译
@@ -51,7 +52,8 @@ hohu/
 
 - **CLI 框架**: Typer，入口 `hohu.main:app`
 - **三层配置**: 全局 `~/.hohu/config.json` / 组件注册表 `components.py` / 项目级 `.hohu/project.json`
-- **i18n**: 模块级单例 `i18n = I18n()`，通过 `i18n.t(key)` 获取翻译，支持 auto/zh/en
+- **i18n**: 模块级单例 `i18n = I18n()`，通过 `i18n.t(key, **kwargs)` 获取翻译，支持变量插值，支持 auto/zh/en
+- **uv 自动安装**: `utils/uv.py` 提供 `ensure_uv()`，在 init/dev 时自动检测并安装 uv
 - **多进程管理**: `dev.py` 用 `subprocess.Popen` + daemon 线程并发启动服务，`threading.Event` + monitor 线程检测进程退出
 - **错误处理**: `utils/process.py` 提供 `run_command` / `run_with_fallback`，统一异常类型 `ProcessError` / `CommandNotFoundError`
 

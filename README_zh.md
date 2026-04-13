@@ -18,10 +18,31 @@
 ## 特性
 
 - **极速启动** — 基于 `uv` 构建，CLI 响应近乎即时
-- **智能初始化** — 自动检测并安装依赖（`uv sync` / `pnpm install`）
+- **智能初始化** — 自动检测并安装依赖（`uv sync` / `pnpm install`），缺少 `uv` 时自动安装
 - **上下文感知** — 通过 `.hohu` 项目配置，可在任意子目录执行命令
 - **国际化** — 完整的中英文支持，自动跟随系统语言
 - **精美交互** — 基于 Rich 格式化输出与 Questionary 交互式提示
+
+## 关于 hohu-admin
+
+**hohu-admin** 是为 AI 时代打造的企业级全栈后台管理平台。开箱即用地提供一整套生产级后端基础设施——用户认证、基于角色的权限控制（RBAC）、分布式 ID 生成、数据库迁移、日志监控、API 文档集成等完整能力，让开发者从重复的底层搭建中解放出来，专注业务创新。
+
+### 特性亮点
+
+- **异步高性能** — 全链路异步处理（FastAPI + SQLAlchemy 2.0 async + PostgreSQL）
+- **分布式雪花 ID** — 时间有序且高性能，自动解决前端 `BigInt` 精度丢失问题
+- **标准 RBAC 模型** — 基于用户-角色-菜单的权限体系，支持按钮级权限校验
+- **优雅的鉴权机制** — 兼容 OAuth2 表单登录（Swagger UI）与 JSON 登录（SPA），内置 Redis 黑名单支持真正退出
+- **统一响应体** — 所有接口遵循 `{code, message, data}` 统一封装结构
+- **自动驼峰转换** — 后端 `snake_case` 与前端 `camelCase` 通过 Pydantic 自动互转
+
+### 子项目
+
+| 项目 | 说明 | 技术栈 |
+|------|------|--------|
+| [hohu-admin](https://github.com/aihohu/hohu-admin) | 后端 API | FastAPI、SQLAlchemy 2.0 (async)、PostgreSQL、Redis |
+| [hohu-admin-web](https://github.com/aihohu/hohu-admin-web) | 管理后台 | Vue 3、NaiveUI、UnoCSS、Pinia、TypeScript |
+| [hohu-admin-app](https://github.com/aihohu/hohu-admin-app) | 移动端应用 | uni-app、Vue 3、Wot Design Uni、alova |
 
 ## 快速开始
 
@@ -51,7 +72,7 @@ pip install --upgrade hohu
 hohu create my-project
 ```
 
-交互式选择组件（后端 / 前端 / App）。不提供名称时默认为 `hohu-admin`。
+逐步确认每个组件（后端 / 前端 / App）。不提供名称时默认为 `hohu-admin`。
 
 ### 安装依赖
 

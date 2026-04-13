@@ -18,10 +18,31 @@ A modern full-stack development toolkit for the **hohu-admin** ecosystem.
 ## Features
 
 - **Blazing Fast** — Built on `uv` for near-instant CLI response times
-- **Smart Init** — Auto-detects and installs dependencies (`uv sync` / `pnpm install`)
+- **Smart Init** — Auto-detects and installs dependencies (`uv sync` / `pnpm install`), auto-installs `uv` if missing
 - **Context-Aware** — Run commands from any subdirectory via `.hohu` project config
 - **i18n** — Full Chinese & English support with automatic system language detection
 - **Polished UX** — Rich-formatted output with interactive prompts via Questionary
+
+## About hohu-admin
+
+**hohu-admin** is an enterprise-grade full-stack admin management platform built for the AI era. It provides a complete set of production-ready backend infrastructure out of the box — user authentication, RBAC permission control, distributed ID generation, database migration, log monitoring, and API documentation — so developers can focus on business innovation instead of repetitive boilerplate.
+
+### Highlights
+
+- **Async High Performance** — Full async pipeline (FastAPI + SQLAlchemy 2.0 async + PostgreSQL)
+- **Distributed Snowflake ID** — Time-ordered, high-performance primary keys with automatic `BigInt` → string serialization
+- **RBAC Permission Model** — User-Role-Menu based access control with button-level granularity
+- **Dual Auth Support** — OAuth2 form login (Swagger UI) + JSON login (SPA), with Redis token blacklist
+- **Unified API Response** — Consistent `{code, message, data}` envelope across all endpoints
+- **Auto Case Conversion** — Backend `snake_case` ↔ Frontend `camelCase` via Pydantic `alias_generator`
+
+### Projects
+
+| Project | Description | Tech Stack |
+|---------|-------------|------------|
+| [hohu-admin](https://github.com/aihohu/hohu-admin) | Backend API | FastAPI, SQLAlchemy 2.0 (async), PostgreSQL, Redis |
+| [hohu-admin-web](https://github.com/aihohu/hohu-admin-web) | Admin dashboard | Vue 3, NaiveUI, UnoCSS, Pinia, TypeScript |
+| [hohu-admin-app](https://github.com/aihohu/hohu-admin-app) | Mobile app | uni-app, Vue 3, Wot Design Uni, alova |
 
 ## Quick Start
 
@@ -51,7 +72,7 @@ pip install --upgrade hohu
 hohu create my-project
 ```
 
-Select components (Backend / Frontend / App) interactively. Defaults to `hohu-admin` if no name is given.
+Confirm each component (Backend / Frontend / App) interactively. Defaults to `hohu-admin` if no name is given.
 
 ### Install Dependencies
 
