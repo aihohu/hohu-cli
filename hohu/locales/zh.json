@@ -30,5 +30,10 @@
   "dev_dir_not_found": "目录不存在: {}",
   "dev_stopping": "正在停止所有服务...",
   "dev_process_exited": "进程 {} 已退出，退出码: {}",
-  "dev_no_processes": "没有进程被启动。"
+  "dev_no_processes": "没有进程被启动。",
+  "manual_install_hint": "请手动进入目录安装依赖: cd {} && {}",
+  "uv_not_found": "未检测到 uv，正在自动安装...",
+  "uv_installing": "正在安装 uv...",
+  "uv_install_success": "uv 安装成功！",
+  "uv_install_failed": "uv 自动安装失败，请手动安装: https://docs.astral.sh/uv/getting-started/installation/"
 }

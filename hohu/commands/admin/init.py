@@ -10,6 +10,7 @@ from hohu.config.components import (
 from hohu.i18n import i18n
 from hohu.utils.process import CommandNotFoundError, run_command, run_with_fallback
 from hohu.utils.project import ProjectManager
+from hohu.utils.uv import ensure_uv
 
 console = Console()
 
@@ -23,6 +24,11 @@ def init():
         return
 
     info = ProjectManager.get_info(root)
+
+    # 确保 uv 已安装（Backend 组件依赖 uv）
+    if "Backend" in info["components"]:
+        ensure_uv()
+
     console.print(f"🛠️  [bold]Initializing: {info['name']}[/bold]\n")
 
     # 遍历项目声明的所有组件（如 backend、frontend）
@@ -55,6 +61,9 @@ def init():
         except (CommandNotFoundError, typer.Exit):
             console.print(
                 f"[red]❌ {i18n.t('dependency_install_failed')} for {item}[/red]"
+            )
+            console.print(
+                f"[yellow]💡 {i18n.t('manual_install_hint').format(path, ' '.join(install_cmd))}[/yellow]"
             )
             raise typer.Exit(1)
 

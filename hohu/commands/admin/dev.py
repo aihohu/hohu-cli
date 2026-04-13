@@ -13,6 +13,7 @@ from hohu.config.components import (
 from hohu.i18n import i18n
 from hohu.utils.process import resolve_command
 from hohu.utils.project import ProjectManager
+from hohu.utils.uv import ensure_uv
 
 console = Console()
 
@@ -94,6 +95,10 @@ def dev(
             f"[dim]{i18n.t('dev_installed_components').format(available_components)}[/dim]"
         )
         return
+
+    # 确保 uv 已安装（Backend dev 依赖 uv run）
+    if "Backend" in to_run:
+        ensure_uv()
 
     processes: dict[str, subprocess.Popen] = {}
     console.print(
