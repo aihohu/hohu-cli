@@ -4,7 +4,11 @@ import questionary
 import typer
 from rich.console import Console
 
-from hohu.config.components import get_component_folder, get_component_repo
+from hohu.config.components import (
+    COMPONENT_CONFIG,
+    get_component_folder,
+    get_component_repo,
+)
 from hohu.config.settings import load_config
 from hohu.i18n import i18n
 from hohu.utils.process import CommandNotFoundError, run_command
@@ -50,11 +54,12 @@ def create(
         console.print(f"[red]Error: {project_name} already exists.[/red]")
         return
 
-    component_names = ["Backend", "Frontend", "App"]
+    console.print(f"\n[bold]{i18n.t('component_setup_hint')}[/bold]\n")
     choices = []
-    for name in component_names:
+    for name, cfg in COMPONENT_CONFIG.items():
+        label = f"{name}（{cfg['folder']}）"
         result = questionary.confirm(
-            i18n.t("include_component", component=name),
+            f"  {i18n.t('include_component', component=label)}",
             default=True,
         ).ask()
         if result:

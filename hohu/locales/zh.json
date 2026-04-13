@@ -1,6 +1,7 @@
 {
   "select_lang": "请选择 CLI 交互语言 / Select Language:",
   "lang_updated": "语言设置已更新，立即生效。",
+  "component_setup_hint": "请选择需要包含的组件（回车确认）：",
   "include_component": "是否包含 {component}？",
   "no_selection": "未选择任何组件，操作已取消。",
   "cloning": "正在克隆",
