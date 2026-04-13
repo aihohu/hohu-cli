@@ -50,14 +50,15 @@ def create(
         console.print(f"[red]Error: {project_name} already exists.[/red]")
         return
 
-    choices = questionary.checkbox(
-        i18n.t("select_components"),
-        choices=[
-            questionary.Choice("Backend", checked=True),
-            questionary.Choice("Frontend", checked=True),
-            questionary.Choice("App", checked=True),
-        ],
-    ).ask()
+    component_names = ["Backend", "Frontend", "App"]
+    choices = []
+    for name in component_names:
+        result = questionary.confirm(
+            i18n.t("include_component", component=name),
+            default=True,
+        ).ask()
+        if result:
+            choices.append(name)
 
     if not choices:
         return

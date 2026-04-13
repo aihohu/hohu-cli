@@ -1,7 +1,7 @@
 {
   "select_lang": "Select CLI interaction language:",
   "lang_updated": "Language settings updated successfully.",
-  "select_components": "Select components to create (Space to select, Enter to confirm):",
+  "include_component": "Include {component}?",
   "no_selection": "No components selected, operation cancelled.",
   "cloning": "Cloning",
   "success_msg": "Project created successfully!",
