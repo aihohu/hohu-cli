@@ -8,12 +8,12 @@ from hohu.config.settings import CONFIG_FILE, load_config, save_config
 from hohu.i18n import i18n
 
 console = Console()
-system_app = typer.Typer(help="System settings & Information")
+system_app = typer.Typer(help=i18n.t("system_help"))
 
 
-@system_app.command("info")
+@system_app.command("info", help=i18n.t("system_info_help"))
 def show_info():
-    """View system configuration information"""
+    """info"""
     config = load_config()
 
     table = Table(
@@ -30,9 +30,9 @@ def show_info():
     console.print(table)
 
 
-@system_app.command("lang")
+@system_app.command("lang", help=i18n.t("system_lang_help"))
 def set_language():
-    """Set the CLI interaction language"""
+    """lang"""
     choices = [
         questionary.Choice("简体中文", value="zh"),
         questionary.Choice("English", value="en"),

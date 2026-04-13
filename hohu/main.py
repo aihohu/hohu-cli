@@ -6,8 +6,9 @@ from hohu.commands.admin.create import create
 from hohu.commands.admin.dev import dev
 from hohu.commands.admin.init import init
 from hohu.commands.system import set_language, show_info, system_app
+from hohu.i18n import i18n
 
-app = typer.Typer(name="hohu", help="HoHu CLI Tool", no_args_is_help=True)
+app = typer.Typer(name="hohu", help=i18n.t("cli_help"), no_args_is_help=True)
 console = Console()
 
 
@@ -22,7 +23,7 @@ def version_callback(value: bool):
         raise typer.Exit()
 
 
-@app.callback()
+@app.callback(invoke_without_command=True)
 def main(
     version: bool = typer.Option(
         None,
@@ -30,21 +31,20 @@ def main(
         "-v",
         callback=version_callback,
         is_eager=True,
-        help="Show version",
+        help=i18n.t("version_help"),
     ),
 ):
-    """HoHu 全能开发管理工具"""
     pass
 
 
-app.command(name="create")(create)
-app.command(name="init")(init)
-app.command(name="dev")(dev)
+app.command(name="create", help=i18n.t("create_help"))(create)
+app.command(name="init", help=i18n.t("init_help"))(init)
+app.command(name="dev", help=i18n.t("dev_help"))(dev)
 
 app.add_typer(system_app, name="system")
 
-app.command(name="lang")(set_language)
-app.command(name="info")(show_info)
+app.command(name="lang", help=i18n.t("system_lang_help"))(set_language)
+app.command(name="info", help=i18n.t("system_info_help"))(show_info)
 
 if __name__ == "__main__":
     app()

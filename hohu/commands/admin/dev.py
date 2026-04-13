@@ -36,17 +36,15 @@ def log_worker(pipe, prefix, color):
 
 
 def dev(
-    target: str = typer.Option(
-        "h5", "--app-target", "-t", help="APP端目标: h5, mp, app"
-    ),
+    target: str = typer.Option("h5", "--app-target", "-t", help=i18n.t("target_help")),
     only: list[str] | None = typer.Option(
-        None, "--only", "-o", help="仅启动指定组件(支持简写: be, fe, app)"
+        None, "--only", "-o", help=i18n.t("only_help")
     ),
-    skip: list[str] | None = typer.Option(None, "--skip", "-s", help="跳过指定组件"),
+    skip: list[str] | None = typer.Option(
+        None, "--skip", "-s", help=i18n.t("skip_help")
+    ),
 ):
-    """
-    启动开发环境。支持通过 --only 或 --skip 过滤组件。
-    """
+    """dev"""
     root = ProjectManager.find_root()
     if not root:
         console.print(f"[red]{i18n.t('not_in_project')}[/red]")

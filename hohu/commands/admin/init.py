@@ -16,7 +16,7 @@ console = Console()
 
 
 def init():
-    """Initialize environment for current project (uv/pnpm)"""
+    """init"""
     # 检测项目根目录（需包含 .hohu/project.json）
     root = ProjectManager.find_root()
     if not root:

@@ -46,9 +46,9 @@ def get_custom_repo(
 
 def create(
     project_name: str = typer.Argument("hohu-admin"),
-    repo: str = typer.Option(None, "--repo", "-r", help="自定义模板仓库地址"),
+    repo: str = typer.Option(None, "--repo", "-r", help=i18n.t("repo_help")),
 ):
-    """Create a new project directory and clone templates"""
+    """create"""
     root = Path.cwd() / project_name
     if root.exists():
         console.print(f"[red]Error: {project_name} already exists.[/red]")
