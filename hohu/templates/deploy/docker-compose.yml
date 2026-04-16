@@ -1,0 +1,198 @@
+name: hohu
+
+services:
+  # ============================
+  # Infrastructure
+  # ============================
+  postgres:
+    image: postgres:18-alpine
+    container_name: hohu-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hohu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hohu_secret_6789}
+      POSTGRES_DB: ${POSTGRES_DB:-hohu_admin}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hohu}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - hohu-network
+
+  redis:
+    image: redis:8.6-alpine
+    container_name: hohu-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-hohu_redis_6789}
+      --appendonly yes
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-hohu_redis_6789}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hohu-network
+
+  # ============================
+  # Database Migration (run once)
+  # ============================
+  db-migrator:
+    image: ${API_IMAGE:-ghcr.io/aihohu/hohu-admin}:${IMAGE_TAG:-latest}
+    container_name: hohu-db-migrator
+    environment:
+      ENV: prod
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hohu}:${POSTGRES_PASSWORD:-hohu_secret_6789}@postgres:5432/${POSTGRES_DB:-hohu_admin}
+      SECRET_KEY: ${SECRET_KEY:-change_me_in_production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        echo "Running database migrations..."
+        alembic upgrade head
+        echo "Initializing database..."
+        python scripts/init_db.py
+        echo "Migration and initialization complete."
+    profiles:
+      - migrate
+    networks:
+      - hohu-network
+
+  # ============================
+  # Application
+  # ============================
+  hohu-admin-api:
+    image: ${API_IMAGE:-ghcr.io/aihohu/hohu-admin}:${IMAGE_TAG:-latest}
+    container_name: hohu-admin-api
+    restart: unless-stopped
+    environment:
+      ENV: prod
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hohu}:${POSTGRES_PASSWORD:-hohu_secret_6789}@postgres:5432/${POSTGRES_DB:-hohu_admin}
+      SECRET_KEY: ${SECRET_KEY:-change_me_in_production}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-10080}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-hohu_redis_6789}
+      REDIS_DB: 0
+      WORKER_ID: ${WORKER_ID:-1}
+      UVICORN_WORKERS: ${UVICORN_WORKERS:-4}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+    networks:
+      - hohu-network
+
+  hohu-admin-web:
+    image: ${WEB_IMAGE:-ghcr.io/aihohu/hohu-admin-web}:${IMAGE_TAG:-latest}
+    container_name: hohu-admin-web
+    restart: unless-stopped
+    environment:
+      API_URL: http://hohu-admin-api:8000/
+    depends_on:
+      hohu-admin-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+    networks:
+      - hohu-network
+
+  # ============================
+  # Nginx Reverse Proxy (SSL)
+  # ============================
+  nginx:
+    image: nginx:alpine
+    container_name: hohu-nginx
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${SSL_CERT_PATH:-./ssl}:/etc/nginx/ssl:ro
+      - certbot-www:/var/www/certbot:ro
+      - certbot-conf:/etc/letsencrypt:ro
+    depends_on:
+      hohu-admin-web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - hohu-network
+
+  # ============================
+  # Certbot (Let's Encrypt)
+  # ============================
+  # 可选服务，用于自动申请和续期 SSL 证书
+  # 启用方式: docker compose run --rm certbot certonly
+  certbot:
+    image: certbot/certbot
+    container_name: hohu-certbot
+    volumes:
+      - certbot-www:/var/www/certbot
+      - certbot-conf:/etc/letsencrypt
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    profiles:
+      - certbot
+    networks:
+      - hohu-network
+
+# ============================
+# Volumes
+# ============================
+volumes:
+  pgdata:
+    name: hohu-pgdata
+  redisdata:
+    name: hohu-redisdata
+  certbot-www:
+    name: hohu-certbot-www
+  certbot-conf:
+    name: hohu-certbot-conf
+
+# ============================
+# Network
+# ============================
+networks:
+  hohu-network:
+    name: hohu-network
+    driver: bridge

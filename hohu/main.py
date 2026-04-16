@@ -3,8 +3,10 @@ from rich.console import Console
 
 from hohu import __version__
 from hohu.commands.admin.create import create
+from hohu.commands.admin.deploy import deploy_app
 from hohu.commands.admin.dev import dev
 from hohu.commands.admin.init import init
+from hohu.commands.admin.migrate import migrate
 from hohu.commands.system import set_language, show_info, system_app
 from hohu.i18n import i18n
 
@@ -40,7 +42,9 @@ def main(
 app.command(name="create", help=i18n.t("create_help"))(create)
 app.command(name="init", help=i18n.t("init_help"))(init)
 app.command(name="dev", help=i18n.t("dev_help"))(dev)
+app.command(name="migrate", help=i18n.t("migrate_help"))(migrate)
 
+app.add_typer(deploy_app, name="deploy")
 app.add_typer(system_app, name="system")
 
 app.command(name="lang", help=i18n.t("system_lang_help"))(set_language)

@@ -1,6 +1,6 @@
 [project]
 name = "hohu"
-version = "0.1.7"
+version = "0.1.8"
 description = "A full-stack project management CLI tool for Hohu Admin ecosystem."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -47,7 +47,7 @@ hohu = "hohu.main:app"
 packages = ["hohu"]
 
 [tool.hatch.build]
-artifacts = ["hohu/locales/*.json"]
+artifacts = ["hohu/locales/*.json", "hohu/templates/**/*"]
 
 [build-system]
 requires = ["hatchling"]

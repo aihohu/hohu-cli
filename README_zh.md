@@ -19,6 +19,8 @@
 
 - **极速启动** — 基于 `uv` 构建，CLI 响应近乎即时
 - **智能初始化** — 自动检测并安装依赖（`uv sync` / `pnpm install`），缺少 `uv` 时自动安装
+- **一键部署** — 通过 `hohu deploy` 一键部署全栈服务（后端 + 前端 + PostgreSQL + Redis + Nginx SSL）
+- **数据库迁移** — 通过 `hohu migrate` 运行数据库迁移和初始化
 - **上下文感知** — 通过 `.hohu` 项目配置，可在任意子目录执行命令
 - **国际化** — 完整的中英文支持，自动跟随系统语言
 - **精美交互** — 基于 Rich 格式化输出与 Questionary 交互式提示
@@ -125,6 +127,67 @@ hohu dev -t mp    # App 微信小程序模式
 
 按 `Ctrl+C` 优雅退出，所有子进程将被安全终止。
 
+## 部署
+
+通过 Docker Compose 将全栈服务部署到 Linux 服务器，包含 PostgreSQL、Redis、Nginx（SSL 终止）及应用服务。
+
+### 首次部署
+
+```bash
+hohu deploy
+```
+
+该命令将：
+1. 在 `.hohu/deploy/` 下创建配置文件（docker-compose.yml、nginx.conf、.env）
+2. 从模板生成 `.env` — 需编辑后再继续
+3. 拉取镜像、启动 PostgreSQL 和 Redis、运行迁移、启动全部服务
+
+编辑 `.env`（设置密码、SECRET_KEY、SSL 证书路径）后，再次运行 `hohu deploy`。
+
+### 部署命令
+
+```bash
+hohu deploy          # 一键部署（拉取 → 迁移 → 启动）
+hohu deploy pull     # 拉取最新镜像并重启
+hohu deploy ps       # 查看服务状态
+hohu deploy logs     # 查看日志（-f 实时跟踪）
+hohu deploy restart  # 重启服务
+hohu deploy down     # 停止所有服务
+hohu migrate         # 仅运行数据库迁移
+```
+
+### 使用自定义镜像
+
+默认情况下，`hohu deploy` 使用 GHCR 上的官方镜像。如需部署自己 Fork 的版本：
+
+1. 将代码推送到自己的 GitHub 仓库
+2. 通过 GitHub Actions 构建并推送镜像到自己的 Registry
+3. 编辑 `.hohu/deploy/.env`：
+
+```env
+API_IMAGE=ghcr.io/your-org/hohu-admin
+WEB_IMAGE=ghcr.io/your-org/hohu-admin-web
+IMAGE_TAG=v1.0.0
+```
+
+### 架构
+
+```
+Internet → Nginx (SSL) → hohu-admin-web → hohu-admin-api → PostgreSQL + Redis
+```
+
+### SSL 证书
+
+将证书文件放置在 `.hohu/deploy/ssl/` 目录下：
+
+```
+ssl/
+├── fullchain.pem
+└── privkey.pem
+```
+
+使用 Let's Encrypt 时，将 `.env` 中的 `SSL_CERT_PATH` 指向 certbot 的输出目录即可。
+
 ## 命令参考
 
 | 命令 | 说明 |
@@ -132,6 +195,13 @@ hohu dev -t mp    # App 微信小程序模式
 | `hohu create [NAME]` | 创建项目并克隆仓库模板 |
 | `hohu init` | 安装所有子项目依赖 |
 | `hohu dev` | 启动开发服务器 |
+| `hohu deploy` | 一键 Docker 部署 |
+| `hohu deploy pull` | 拉取最新镜像并重启 |
+| `hohu deploy ps` | 查看服务状态 |
+| `hohu deploy logs` | 查看服务日志 |
+| `hohu deploy restart` | 重启服务 |
+| `hohu deploy down` | 停止所有服务 |
+| `hohu migrate` | 运行数据库迁移和初始化 |
 | `hohu lang` | 切换显示语言（zh / en / auto） |
 | `hohu info` | 查看当前 CLI 配置 |
 | `hohu --version` | 显示版本号 |
@@ -142,6 +212,12 @@ hohu dev -t mp    # App 微信小程序模式
 ```
 my-project/
 ├── .hohu/            # 项目配置
+│   ├── project.json  # 项目元数据
+│   └── deploy/       # 部署配置（hohu deploy 自动生成）
+│       ├── docker-compose.yml
+│       ├── .env
+│       ├── nginx/
+│       └── ssl/
 ├── hohu-admin/       # 后端   — FastAPI / uv
 ├── hohu-admin-web/   # 前端  — Vue 3 / pnpm
 └── hohu-admin-app/   # App   — Uni-app / pnpm
@@ -154,6 +230,7 @@ my-project/
 | CLI 框架 | [Typer](https://typer.tiangolo.com/) |
 | 终端 UI | [Rich](https://rich.readthedocs.io/) + [Questionary](https://questionary.readthedocs.io/) |
 | 包管理器 | [uv](https://docs.astral.sh/uv/) |
+| 部署 | [Docker Compose](https://docs.docker.com/compose/) + [Nginx](https://nginx.org/) |
 | 后端 | [FastAPI](https://fastapi.tiangolo.com/) |
 | 前端 | [Vue 3](https://vuejs.org/) |
 | App | [Uni-app](https://uniapp.dcloud.net.cn/) |
