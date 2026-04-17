@@ -166,60 +166,152 @@ def _is_nginx_enabled(deploy_dir: Path) -> bool:
     return _read_env_value(deploy_dir, "ENABLE_NGINX", "false").lower() == "true"
 
 
-# docker compose up 时默认启动的服务（排除 nginx 和有 profile 的服务）
-_APP_SERVICES = ["postgres", "redis", "hohu-admin-api", "hohu-admin-web"]
+def _is_postgres_enabled(deploy_dir: Path) -> bool:
+    """检查 .env 中 ENABLE_POSTGRES 是否启用"""
+    return _read_env_value(deploy_dir, "ENABLE_POSTGRES", "true").lower() != "false"
 
 
-def _update_port_override(deploy_dir: Path) -> None:
-    """根据 .env 端口配置动态生成或删除 docker-compose.override.yml
+def _is_redis_enabled(deploy_dir: Path) -> bool:
+    """检查 .env 中 ENABLE_REDIS 是否启用"""
+    return _read_env_value(deploy_dir, "ENABLE_REDIS", "true").lower() != "false"
 
-    可配置端口（留空或不设置则不暴露）：
-      WEB_PORT, API_PORT — 前端/后端
-      PG_PORT, REDIS_PORT — 数据库/缓存
-    """
-    override_file = deploy_dir / "docker-compose.override.yml"
 
-    # 所有可暴露的端口: env_key → (service_name, container_port)
+def _collect_pg_env(deploy_dir: Path) -> dict[str, str]:
+    """收集外部 PostgreSQL 需要注入的环境变量"""
+    database_url = _read_env_value(deploy_dir, "DATABASE_URL", "")
+    if not database_url:
+        return {}
+    return {"DATABASE_URL": database_url}
+
+
+def _collect_redis_env(deploy_dir: Path) -> dict[str, str]:
+    """收集外部 Redis 需要注入的环境变量"""
+    redis_host = _read_env_value(deploy_dir, "REDIS_HOST", "127.0.0.1")
+    redis_password = _read_env_value(deploy_dir, "REDIS_PASSWORD", "")
+    env = {"REDIS_HOST": redis_host}
+    if redis_password:
+        env["REDIS_PASSWORD"] = redis_password
+    return env
+
+
+def _collect_port_overrides(
+    deploy_dir: Path, pg_enabled: bool, redis_enabled: bool
+) -> dict[str, list[str]]:
+    """从 .env 收集端口映射，返回 {service: [port_lines]}"""
     port_mappings = [
         ("WEB_PORT", "hohu-admin-web", 80),
         ("API_PORT", "hohu-admin-api", 8000),
         ("PG_PORT", "postgres", 5432),
         ("REDIS_PORT", "redis", 6379),
     ]
-
+    disabled = {"postgres": not pg_enabled, "redis": not redis_enabled}
     services: dict[str, list[str]] = {}
     for env_key, service, container_port in port_mappings:
+        if disabled.get(service):
+            continue
         host_port = _read_env_value(deploy_dir, env_key, "")
-        if host_port:
-            # Validate port (supports "8080" or "127.0.0.1:8080" format)
-            port_num_str = host_port.split(":")[-1]
-            try:
-                port_num = int(port_num_str)
-                if not (1 <= port_num <= 65535):
-                    console.print(
-                        f"[yellow]Warning: {env_key}={host_port} is not a valid port (1-65535), skipping[/yellow]"
-                    )
-                    continue
-            except ValueError:
-                console.print(
-                    f"[yellow]Warning: {env_key}={host_port} is not a valid port number, skipping[/yellow]"
-                )
-                continue
-            services.setdefault(service, []).append(
-                f'      - "{host_port}:{container_port}"\n'
+        if not host_port:
+            continue
+        port_num_str = host_port.split(":")[-1]
+        try:
+            port_num = int(port_num_str)
+        except ValueError:
+            console.print(
+                f"[yellow]Warning: {env_key}={host_port} is not a valid port, skipping[/yellow]"
             )
+            continue
+        if not 1 <= port_num <= 65535:
+            console.print(
+                f"[yellow]Warning: {env_key}={host_port} is out of range, skipping[/yellow]"
+            )
+            continue
+        services.setdefault(service, []).append(
+            f'      - "{host_port}:{container_port}"\n'
+        )
+    return services
 
-    if not services:
+
+def _append_infra_profiles(
+    lines: list[str], deploy_dir: Path, pg_enabled: bool, redis_enabled: bool
+) -> None:
+    """向 lines 追加被禁用基础设施服务的 profile 配置"""
+    if not pg_enabled:
+        lines.append("  postgres:\n    profiles:\n      - external-infra\n")
+        db_url = _read_env_value(deploy_dir, "DATABASE_URL", "")
+        lines.append("  db-migrator:\n")
+        if db_url:
+            lines.append(f"    environment:\n      DATABASE_URL: {db_url}\n")
+    if not redis_enabled:
+        lines.append("  redis:\n    profiles:\n      - external-infra\n")
+
+
+def _build_service_config(
+    api_env: dict[str, str], ports: dict[str, list[str]]
+) -> dict[str, dict[str, list[str]]]:
+    """合并环境变量和端口映射为按服务组织的配置"""
+    svc_config: dict[str, dict[str, list[str]]] = {}
+    if api_env:
+        svc_config["hohu-admin-api"] = {
+            "env": [f"      {k}: {v}\n" for k, v in api_env.items()]
+        }
+    for svc, port_lines in ports.items():
+        svc_config.setdefault(svc, {})
+        svc_config[svc]["ports"] = port_lines
+    return svc_config
+
+
+def _write_service_sections(
+    lines: list[str], svc_config: dict[str, dict[str, list[str]]]
+) -> None:
+    """向 lines 追加各服务的 environment 和 ports 段"""
+    for svc, cfg in svc_config.items():
+        lines.append(f"  {svc}:\n")
+        if "env" in cfg:
+            lines.append("    environment:\n")
+            lines.extend(cfg["env"])
+        if "ports" in cfg:
+            lines.append("    ports:\n")
+            lines.extend(cfg["ports"])
+
+
+def _update_infra_override(deploy_dir: Path) -> None:
+    """根据 ENABLE_POSTGRES/ENABLE_REDIS 和端口配置生成 override 文件"""
+    pg_enabled = _is_postgres_enabled(deploy_dir)
+    redis_enabled = _is_redis_enabled(deploy_dir)
+    all_enabled = pg_enabled and redis_enabled
+    override_file = deploy_dir / "docker-compose.override.yml"
+
+    ports = _collect_port_overrides(deploy_dir, pg_enabled, redis_enabled)
+
+    if all_enabled and not ports:
         if override_file.exists():
             override_file.unlink()
         return
 
     lines = ["services:\n"]
-    for service, ports in services.items():
-        lines.append(f"  {service}:\n    ports:\n")
-        lines.extend(ports)
+    _append_infra_profiles(lines, deploy_dir, pg_enabled, redis_enabled)
+
+    # 合并 hohu-admin-api 环境变量
+    api_env: dict[str, str] = {}
+    if not pg_enabled:
+        api_env.update(_collect_pg_env(deploy_dir))
+    if not redis_enabled:
+        api_env.update(_collect_redis_env(deploy_dir))
+
+    svc_config = _build_service_config(api_env, ports)
+    _write_service_sections(lines, svc_config)
 
     override_file.write_text("".join(lines), encoding="utf-8")
+
+
+def _get_app_services(deploy_dir: Path) -> list[str]:
+    """根据 ENABLE 开关返回需要启动的服务列表"""
+    services = ["hohu-admin-api", "hohu-admin-web"]
+    if _is_postgres_enabled(deploy_dir):
+        services.insert(0, "postgres")
+    if _is_redis_enabled(deploy_dir):
+        services.insert(0, "redis")
+    return services
 
 
 def _ensure_docker() -> None:
@@ -260,6 +352,65 @@ def deploy_init():
     console.print(i18n.t("deploy_init_hint").format(env_file))
 
 
+def _pull_images(
+    cmd: list[str],
+    deploy_dir: Path,
+    pg_enabled: bool,
+    redis_enabled: bool,
+) -> None:
+    """拉取镜像（本地构建时跳过应用镜像）"""
+    api_image = _read_env_value(deploy_dir, "API_IMAGE", "")
+    is_local_build = api_image and "/" not in api_image
+
+    pull_services = []
+    if pg_enabled:
+        pull_services.append("postgres")
+    if redis_enabled:
+        pull_services.append("redis")
+    pull_services.append("nginx")
+
+    if is_local_build:
+        console.print(f"[dim]{i18n.t('deploy_skip_pull_local')}[/dim]")
+        run_command(cmd + ["pull"] + pull_services, cwd=deploy_dir)
+    else:
+        console.print(f"[bold cyan]{i18n.t('deploy_pulling')}[/bold cyan]")
+        run_command(cmd + ["pull"], cwd=deploy_dir)
+
+
+def _start_infra(
+    cmd: list[str],
+    deploy_dir: Path,
+    pg_enabled: bool,
+    redis_enabled: bool,
+) -> None:
+    """启动基础设施服务并等待就绪"""
+    infra_services = []
+    if pg_enabled:
+        infra_services.append("postgres")
+    if redis_enabled:
+        infra_services.append("redis")
+
+    if infra_services:
+        console.print(f"[bold cyan]{i18n.t('deploy_starting_infra')}[/bold cyan]")
+        run_command(cmd + ["up", "-d"] + infra_services, cwd=deploy_dir)
+
+    if pg_enabled:
+        console.print(f"[bold cyan]{i18n.t('deploy_waiting_pg')}[/bold cyan]")
+        pg_user = _read_env_value(deploy_dir, "POSTGRES_USER", "hohu")
+        for _ in range(30):
+            result = run_command_silent(
+                cmd + ["exec", "-T", "postgres", "pg_isready", "-U", pg_user],
+                cwd=deploy_dir,
+                check=False,
+            )
+            if result.returncode == 0:
+                break
+            time.sleep(1)
+        else:
+            console.print(f"[red]{i18n.t('deploy_pg_timeout')}[/red]")
+            raise typer.Exit(1)
+
+
 @deploy_app.callback(invoke_without_command=True)
 def deploy(
     ctx: typer.Context,
@@ -275,33 +426,14 @@ def deploy(
     _ensure_docker()
     deploy_dir = _ensure_deploy_dir()
     _ensure_env(deploy_dir)
-    _update_port_override(deploy_dir)
+    _update_infra_override(deploy_dir)
     cmd = _compose_cmd(deploy_dir)
 
-    # Step 1: Pull images
-    console.print(f"[bold cyan]{i18n.t('deploy_pulling')}[/bold cyan]")
-    run_command(cmd + ["pull"], cwd=deploy_dir)
+    pg_enabled = _is_postgres_enabled(deploy_dir)
+    redis_enabled = _is_redis_enabled(deploy_dir)
 
-    # Step 2: Start infrastructure
-    console.print(f"[bold cyan]{i18n.t('deploy_starting_infra')}[/bold cyan]")
-    run_command(cmd + ["up", "-d", "postgres", "redis"], cwd=deploy_dir)
-
-    # Step 3: Wait for PostgreSQL
-    console.print(f"[bold cyan]{i18n.t('deploy_waiting_pg')}[/bold cyan]")
-    pg_user = _read_env_value(deploy_dir, "POSTGRES_USER", "hohu")
-
-    for _ in range(30):
-        result = run_command_silent(
-            cmd + ["exec", "-T", "postgres", "pg_isready", "-U", pg_user],
-            cwd=deploy_dir,
-            check=False,
-        )
-        if result.returncode == 0:
-            break
-        time.sleep(1)
-    else:
-        console.print(f"[red]{i18n.t('deploy_pg_timeout')}[/red]")
-        raise typer.Exit(1)
+    _pull_images(cmd, deploy_dir, pg_enabled, redis_enabled)
+    _start_infra(cmd, deploy_dir, pg_enabled, redis_enabled)
 
     # Step 4: Migrate (+ init if --init specified)
     if not no_migrate or init:
@@ -314,7 +446,10 @@ def deploy(
     if _is_nginx_enabled(deploy_dir):
         run_command(cmd + ["up", "-d"], cwd=deploy_dir)
     else:
-        run_command(cmd + ["up", "-d"] + _APP_SERVICES, cwd=deploy_dir)
+        run_command(
+            cmd + ["up", "-d"] + _get_app_services(deploy_dir),
+            cwd=deploy_dir,
+        )
 
     console.print(f"\n[bold green]{i18n.t('deploy_success')}[/bold green]")
 
@@ -365,7 +500,7 @@ def deploy_pull():
     _ensure_docker()
     deploy_dir = _ensure_deploy_dir()
     _ensure_env(deploy_dir)
-    _update_port_override(deploy_dir)
+    _update_infra_override(deploy_dir)
     cmd = _compose_cmd(deploy_dir)
 
     console.print(f"[bold cyan]{i18n.t('deploy_pulling')}[/bold cyan]")
@@ -375,7 +510,10 @@ def deploy_pull():
     if _is_nginx_enabled(deploy_dir):
         run_command(cmd + ["up", "-d"], cwd=deploy_dir)
     else:
-        run_command(cmd + ["up", "-d"] + _APP_SERVICES, cwd=deploy_dir)
+        run_command(
+            cmd + ["up", "-d"] + _get_app_services(deploy_dir),
+            cwd=deploy_dir,
+        )
 
     console.print(f"[green]{i18n.t('deploy_updated')}[/green]")
 

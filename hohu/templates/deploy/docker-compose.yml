@@ -54,6 +54,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+        required: false
     entrypoint: ["sh", "-c"]
     command:
       - |
@@ -91,8 +92,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+        required: false
       redis:
         condition: service_healthy
+        required: false
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
       interval: 30s

@@ -20,6 +20,7 @@ A modern full-stack development toolkit for the **hohu-admin** ecosystem.
 - **Blazing Fast** — Built on `uv` for near-instant CLI response times
 - **Smart Init** — Auto-detects and installs dependencies (`uv sync` / `pnpm install`), auto-installs `uv` if missing
 - **One-Click Deploy** — Deploy the full stack (Backend + Frontend + PostgreSQL + Redis + Nginx SSL) with a single `hohu deploy`
+- **Source Build** — Build Docker images from your modified source code with `hohu build`, then deploy
 - **Database Migrations** — Run migrations and seed data via `hohu migrate`
 - **Context-Aware** — Run commands from any subdirectory via `.hohu` project config
 - **i18n** — Full Chinese & English support with automatic system language detection
@@ -127,27 +128,48 @@ Component aliases (case-insensitive): `be` / `backend`, `fe` / `frontend`, `app`
 
 Press `Ctrl+C` for graceful shutdown — all child processes are terminated cleanly.
 
+## Build
+
+Build Docker images from local source code. After building, run `hohu deploy` to deploy with the locally built images.
+
+```bash
+hohu build                  # Build all components
+hohu build --only=backend   # Build backend only
+hohu build --only=frontend  # Build frontend only
+hohu build --no-cache       # Build without cache
+hohu build --tag=v1.0.0     # Custom image tag
+hohu build --reset          # Reset to official GHCR images
+```
+
+Automatically initializes `.hohu/deploy/` (config, `.env`, secrets) on first run — no need to run `hohu deploy init` separately. Switch back to official images anytime with `hohu build --reset`.
+
 ## Deployment
 
 Deploy the full stack to a Linux server with Docker Compose. Includes PostgreSQL, Redis, Nginx (SSL termination), and the application services.
 
-### First-Time Deploy
+### Quick Start
+
+**Source build deploy:**
 
 ```bash
-hohu deploy
+hohu build          # Build images (auto-initializes deploy config)
+hohu deploy         # Deploy
 ```
 
-This will:
-1. Create `.hohu/deploy/` with configuration files (docker-compose.yml, nginx.conf, .env)
-2. Generate `.env` from template — edit it before proceeding
-3. Pull images, start PostgreSQL & Redis, run migrations, and launch all services
+**Official image deploy:**
 
-After editing `.env` (passwords, SECRET_KEY, SSL certs), run `hohu deploy` again.
+```bash
+hohu deploy init    # Initialize deployment config and generate .env
+hohu deploy         # Pull images and deploy
+```
+
+Edit `.hohu/deploy/.env` to set passwords, SECRET_KEY, and SSL certificate path before deploying.
 
 ### Deploy Commands
 
 ```bash
 hohu deploy          # One-click deploy (pull → migrate → start)
+hohu deploy init     # Initialize deployment directory and .env
 hohu deploy pull     # Pull latest images and restart
 hohu deploy ps       # Show service status
 hohu deploy logs     # View logs (-f to follow)
@@ -156,19 +178,29 @@ hohu deploy down     # Stop all services
 hohu migrate         # Run database migrations only
 ```
 
-### Custom Images
+### Deploy Options
 
-By default, `hohu deploy` uses the official images from GHCR. To deploy your own fork:
-
-1. Push your code to your GitHub repo
-2. Set up GitHub Actions to build and push images to your own registry
-3. Edit `.hohu/deploy/.env`:
-
-```env
-API_IMAGE=ghcr.io/your-org/hohu-admin
-WEB_IMAGE=ghcr.io/your-org/hohu-admin-web
-IMAGE_TAG=v1.0.0
+```bash
+hohu deploy --init          # Also seed database (create admin user and menus)
+hohu deploy --no-migrate    # Skip database migrations
 ```
+
+### External PostgreSQL / Redis
+
+By default, PostgreSQL and Redis run as Docker containers. To use your own instances, edit `.hohu/deploy/.env`:
+
+```bash
+# Disable built-in PostgreSQL
+ENABLE_POSTGRES=false
+DATABASE_URL=postgresql+asyncpg://user:password@your-pg-host:5432/dbname
+
+# Disable built-in Redis
+ENABLE_REDIS=false
+REDIS_HOST=your-redis-host
+REDIS_PASSWORD=your-redis-password
+```
+
+When disabled, the corresponding containers won't start and the application connects to your external instances.
 
 ### Architecture
 
@@ -195,7 +227,9 @@ For Let's Encrypt, point `SSL_CERT_PATH` in `.env` to the certbot output directo
 | `hohu create [NAME]` | Create project and clone repo templates |
 | `hohu init` | Install all sub-project dependencies |
 | `hohu dev` | Start development server |
+| `hohu build` | Build Docker images from local source code |
 | `hohu deploy` | One-click Docker deployment |
+| `hohu deploy init` | Initialize deployment directory and .env |
 | `hohu deploy pull` | Pull latest images and restart |
 | `hohu deploy ps` | Show service status |
 | `hohu deploy logs` | View service logs |
@@ -206,22 +240,6 @@ For Let's Encrypt, point `SSL_CERT_PATH` in `.env` to the certbot output directo
 | `hohu info` | View current CLI configuration |
 | `hohu --version` | Show version |
 | `hohu --help` | Show help |
-
-## Project Structure
-
-```
-my-project/
-├── .hohu/            # Project config
-│   ├── project.json  # Project metadata
-│   └── deploy/       # Deployment config (auto-generated by hohu deploy)
-│       ├── docker-compose.yml
-│       ├── .env
-│       ├── nginx/
-│       └── ssl/
-├── hohu-admin/       # Backend   — FastAPI / uv
-├── hohu-admin-web/   # Frontend  — Vue 3 / pnpm
-└── hohu-admin-app/   # App       — Uni-app / pnpm
-```
 
 ## Tech Stack
 

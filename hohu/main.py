@@ -2,6 +2,7 @@ import typer
 from rich.console import Console
 
 from hohu import __version__
+from hohu.commands.admin.build import build
 from hohu.commands.admin.create import create
 from hohu.commands.admin.deploy import deploy_app
 from hohu.commands.admin.dev import dev
@@ -42,6 +43,7 @@ def main(
 app.command(name="create", help=i18n.t("create_help"))(create)
 app.command(name="init", help=i18n.t("init_help"))(init)
 app.command(name="dev", help=i18n.t("dev_help"))(dev)
+app.command(name="build", help=i18n.t("build_help"))(build)
 app.command(name="migrate", help=i18n.t("migrate_help"))(migrate)
 
 app.add_typer(deploy_app, name="deploy")

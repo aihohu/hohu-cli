@@ -20,6 +20,7 @@
 - **极速启动** — 基于 `uv` 构建，CLI 响应近乎即时
 - **智能初始化** — 自动检测并安装依赖（`uv sync` / `pnpm install`），缺少 `uv` 时自动安装
 - **一键部署** — 通过 `hohu deploy` 一键部署全栈服务（后端 + 前端 + PostgreSQL + Redis + Nginx SSL）
+- **源码构建** — 通过 `hohu build` 从修改后的源码构建 Docker 镜像，一键部署
 - **数据库迁移** — 通过 `hohu migrate` 运行数据库迁移和初始化
 - **上下文感知** — 通过 `.hohu` 项目配置，可在任意子目录执行命令
 - **国际化** — 完整的中英文支持，自动跟随系统语言
@@ -127,27 +128,48 @@ hohu dev -t mp    # App 微信小程序模式
 
 按 `Ctrl+C` 优雅退出，所有子进程将被安全终止。
 
+## 构建镜像
+
+从本地源码构建 Docker 镜像。构建完成后，运行 `hohu deploy` 即可使用本地镜像部署。
+
+```bash
+hohu build                  # 构建所有组件
+hohu build --only=backend   # 仅构建后端
+hohu build --only=frontend  # 仅构建前端
+hohu build --no-cache       # 不使用构建缓存
+hohu build --tag=v1.0.0     # 自定义镜像标签
+hohu build --reset          # 重置为官方 GHCR 镜像
+```
+
+首次运行时自动初始化 `.hohu/deploy/`（配置文件、`.env`、密钥），无需单独执行 `hohu deploy init`。随时可通过 `hohu build --reset` 切换回官方镜像。
+
 ## 部署
 
 通过 Docker Compose 将全栈服务部署到 Linux 服务器，包含 PostgreSQL、Redis、Nginx（SSL 终止）及应用服务。
 
-### 首次部署
+### 快速开始
+
+**源码构建部署：**
 
 ```bash
-hohu deploy
+hohu build          # 构建镜像（自动初始化部署配置）
+hohu deploy         # 部署
 ```
 
-该命令将：
-1. 在 `.hohu/deploy/` 下创建配置文件（docker-compose.yml、nginx.conf、.env）
-2. 从模板生成 `.env` — 需编辑后再继续
-3. 拉取镜像、启动 PostgreSQL 和 Redis、运行迁移、启动全部服务
+**官方镜像部署：**
 
-编辑 `.env`（设置密码、SECRET_KEY、SSL 证书路径）后，再次运行 `hohu deploy`。
+```bash
+hohu deploy init    # 初始化部署配置并生成 .env
+hohu deploy         # 拉取镜像并部署
+```
+
+部署前请编辑 `.hohu/deploy/.env` 设置密码、SECRET_KEY 和 SSL 证书路径。
 
 ### 部署命令
 
 ```bash
 hohu deploy          # 一键部署（拉取 → 迁移 → 启动）
+hohu deploy init     # 初始化部署目录和 .env
 hohu deploy pull     # 拉取最新镜像并重启
 hohu deploy ps       # 查看服务状态
 hohu deploy logs     # 查看日志（-f 实时跟踪）
@@ -156,19 +178,29 @@ hohu deploy down     # 停止所有服务
 hohu migrate         # 仅运行数据库迁移
 ```
 
-### 使用自定义镜像
+### 部署参数
 
-默认情况下，`hohu deploy` 使用 GHCR 上的官方镜像。如需部署自己 Fork 的版本：
-
-1. 将代码推送到自己的 GitHub 仓库
-2. 通过 GitHub Actions 构建并推送镜像到自己的 Registry
-3. 编辑 `.hohu/deploy/.env`：
-
-```env
-API_IMAGE=ghcr.io/your-org/hohu-admin
-WEB_IMAGE=ghcr.io/your-org/hohu-admin-web
-IMAGE_TAG=v1.0.0
+```bash
+hohu deploy --init          # 同时初始化数据库（创建管理员用户和菜单）
+hohu deploy --no-migrate    # 跳过数据库迁移
 ```
+
+### 外部 PostgreSQL / Redis
+
+默认使用 Docker 容器运行 PostgreSQL 和 Redis。如需使用自己的实例，编辑 `.hohu/deploy/.env`：
+
+```bash
+# 禁用内置 PostgreSQL
+ENABLE_POSTGRES=false
+DATABASE_URL=postgresql+asyncpg://user:password@your-pg-host:5432/dbname
+
+# 禁用内置 Redis
+ENABLE_REDIS=false
+REDIS_HOST=your-redis-host
+REDIS_PASSWORD=your-redis-password
+```
+
+禁用后，对应容器不会启动，应用将连接到您的外部实例。
 
 ### 架构
 
@@ -195,7 +227,9 @@ ssl/
 | `hohu create [NAME]` | 创建项目并克隆仓库模板 |
 | `hohu init` | 安装所有子项目依赖 |
 | `hohu dev` | 启动开发服务器 |
+| `hohu build` | 从本地源码构建 Docker 镜像 |
 | `hohu deploy` | 一键 Docker 部署 |
+| `hohu deploy init` | 初始化部署目录和 .env |
 | `hohu deploy pull` | 拉取最新镜像并重启 |
 | `hohu deploy ps` | 查看服务状态 |
 | `hohu deploy logs` | 查看服务日志 |
@@ -206,22 +240,6 @@ ssl/
 | `hohu info` | 查看当前 CLI 配置 |
 | `hohu --version` | 显示版本号 |
 | `hohu --help` | 显示帮助 |
-
-## 项目结构
-
-```
-my-project/
-├── .hohu/            # 项目配置
-│   ├── project.json  # 项目元数据
-│   └── deploy/       # 部署配置（hohu deploy 自动生成）
-│       ├── docker-compose.yml
-│       ├── .env
-│       ├── nginx/
-│       └── ssl/
-├── hohu-admin/       # 后端   — FastAPI / uv
-├── hohu-admin-web/   # 前端  — Vue 3 / pnpm
-└── hohu-admin-app/   # App   — Uni-app / pnpm
-```
 
 ## 技术栈
 
