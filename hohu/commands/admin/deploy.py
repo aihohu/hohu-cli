@@ -1,3 +1,4 @@
+import secrets
 import shutil
 import subprocess
 import sys
@@ -11,42 +12,100 @@ from hohu.i18n import i18n
 from hohu.utils.process import run_command, run_command_silent
 
 console = Console()
-deploy_app = typer.Typer(help=i18n.t("deploy_help"), no_args_is_help=True)
+deploy_app = typer.Typer(help=i18n.t("deploy_help"))
 
 TEMPLATES_DIR = Path(__file__).parent.parent.parent / "templates" / "deploy"
 
+# .env 中需要自动生成的密钥字段
+# SECRET_KEY 用 hex，密码用字母数字混合
+SECRET_FIELDS = {"SECRET_KEY": 32}
+PASSWORD_FIELDS = {"POSTGRES_PASSWORD", "REDIS_PASSWORD"}
+_PASSWORD_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+
+def _generate_password(length: int = 16) -> str:
+    """生成随机字母数字密码"""
+    return "".join(secrets.choice(_PASSWORD_CHARS) for _ in range(length))
+
+
+def _generate_secrets(env_file: Path) -> None:
+    """为 .env 中的密钥字段自动生成随机值（仅替换占位符值）"""
+    lines = env_file.read_text(encoding="utf-8").splitlines()
+    changed = []
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if "=" not in stripped or stripped.startswith("#"):
+            continue
+
+        key, value = stripped.split("=", 1)
+        key = key.strip()
+
+        if key not in SECRET_FIELDS and key not in PASSWORD_FIELDS:
+            continue
+
+        # 仅替换占位符值（被 <> 包裹的）
+        value_stripped = value.strip()
+        if not (value_stripped.startswith("<") and value_stripped.endswith(">")):
+            continue
+
+        if key in SECRET_FIELDS:
+            new_value = secrets.token_hex(SECRET_FIELDS[key])
+        else:
+            new_value = _generate_password()
+        lines[i] = f"{key}={new_value}"
+        changed.append(key)
+
+    if changed:
+        env_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        for field in changed:
+            console.print(f"  [cyan]{field}[/cyan] = [dim](auto-generated)[/dim]")
+
+
+def _fix_line_endings(path: Path) -> None:
+    """将文件换行符转换为 LF（防止 Windows CRLF 在 Linux 容器中报错）"""
+    content = path.read_bytes()
+    if b"\r\n" in content:
+        path.write_bytes(content.replace(b"\r\n", b"\n"))
+
+
+def _sync_templates(deploy_dir: Path) -> None:
+    """从模板复制文件到部署目录（仅复制不存在的文件）"""
+    if not TEMPLATES_DIR.exists():
+        return
+    for item in TEMPLATES_DIR.iterdir():
+        dest = deploy_dir / item.name
+        if item.is_dir():
+            if not dest.exists():
+                shutil.copytree(item, dest)
+                # 修复 shell 脚本换行符
+                for sh_file in dest.rglob("*.sh"):
+                    _fix_line_endings(sh_file)
+        else:
+            if not dest.exists():
+                shutil.copy2(item, dest)
+                if item.suffix == ".sh":
+                    _fix_line_endings(dest)
+
 
 def _get_deploy_dir() -> Path | None:
-    """找到项目根目录下的 .hohu/deploy/ 目录"""
-    # 从当前目录向上查找 .hohu/project.json
+    """查找 .hohu/deploy/ 目录"""
     current = Path.cwd()
     for parent in [current, *current.parents]:
-        marker = parent / ".hohu" / "project.json"
-        if marker.exists():
-            deploy_dir = parent / ".hohu" / "deploy"
-            deploy_dir.mkdir(parents=True, exist_ok=True)
-            return deploy_dir
+        candidate = parent / ".hohu" / "deploy"
+        if candidate.exists():
+            return candidate
     return None
 
 
 def _ensure_deploy_dir() -> Path:
-    """确保部署目录存在，不存在则从模板创建"""
+    """确保部署目录存在并同步模板"""
     deploy_dir = _get_deploy_dir()
     if deploy_dir is None:
-        console.print(f"[red]{i18n.t('not_in_project')}[/red]")
+        console.print(f"[red]{i18n.t('deploy_not_initialized')}[/red]")
         raise typer.Exit(1)
 
-    # 从模板复制必要文件（仅在目标不存在时复制）
-    if TEMPLATES_DIR.exists():
-        for item in TEMPLATES_DIR.iterdir():
-            dest = deploy_dir / item.name
-            if item.is_dir():
-                if not dest.exists():
-                    shutil.copytree(item, dest)
-            else:
-                if not dest.exists():
-                    shutil.copy2(item, dest)
-
+    _sync_templates(deploy_dir)
     return deploy_dir
 
 
@@ -69,17 +128,98 @@ def _ensure_env(deploy_dir: Path) -> Path:
 
 
 def _compose_cmd(deploy_dir: Path) -> list[str]:
-    """构建 docker compose 命令前缀"""
-    return [
+    """构建 docker compose 命令前缀（自动加载 override 文件）"""
+    cmd = [
         "docker",
         "compose",
         "-f",
         str(deploy_dir / "docker-compose.yml"),
-        "--env-file",
-        str(deploy_dir / ".env"),
-        "--project-directory",
-        str(deploy_dir),
     ]
+    override = deploy_dir / "docker-compose.override.yml"
+    if override.exists():
+        cmd.extend(["-f", str(override)])
+    cmd.extend(
+        [
+            "--env-file",
+            str(deploy_dir / ".env"),
+            "--project-directory",
+            str(deploy_dir),
+        ]
+    )
+    return cmd
+
+
+def _read_env_value(deploy_dir: Path, key: str, default: str = "") -> str:
+    """从 .env 文件读取指定 key 的值"""
+    env_file = deploy_dir / ".env"
+    if not env_file.exists():
+        return default
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped.startswith(f"{key}="):
+            return stripped.split("=", 1)[1].strip()
+    return default
+
+
+def _is_nginx_enabled(deploy_dir: Path) -> bool:
+    """检查 .env 中 ENABLE_NGINX 是否启用"""
+    return _read_env_value(deploy_dir, "ENABLE_NGINX", "false").lower() == "true"
+
+
+# docker compose up 时默认启动的服务（排除 nginx 和有 profile 的服务）
+_APP_SERVICES = ["postgres", "redis", "hohu-admin-api", "hohu-admin-web"]
+
+
+def _update_port_override(deploy_dir: Path) -> None:
+    """根据 .env 端口配置动态生成或删除 docker-compose.override.yml
+
+    可配置端口（留空或不设置则不暴露）：
+      WEB_PORT, API_PORT — 前端/后端
+      PG_PORT, REDIS_PORT — 数据库/缓存
+    """
+    override_file = deploy_dir / "docker-compose.override.yml"
+
+    # 所有可暴露的端口: env_key → (service_name, container_port)
+    port_mappings = [
+        ("WEB_PORT", "hohu-admin-web", 80),
+        ("API_PORT", "hohu-admin-api", 8000),
+        ("PG_PORT", "postgres", 5432),
+        ("REDIS_PORT", "redis", 6379),
+    ]
+
+    services: dict[str, list[str]] = {}
+    for env_key, service, container_port in port_mappings:
+        host_port = _read_env_value(deploy_dir, env_key, "")
+        if host_port:
+            # Validate port (supports "8080" or "127.0.0.1:8080" format)
+            port_num_str = host_port.split(":")[-1]
+            try:
+                port_num = int(port_num_str)
+                if not (1 <= port_num <= 65535):
+                    console.print(
+                        f"[yellow]Warning: {env_key}={host_port} is not a valid port (1-65535), skipping[/yellow]"
+                    )
+                    continue
+            except ValueError:
+                console.print(
+                    f"[yellow]Warning: {env_key}={host_port} is not a valid port number, skipping[/yellow]"
+                )
+                continue
+            services.setdefault(service, []).append(
+                f'      - "{host_port}:{container_port}"\n'
+            )
+
+    if not services:
+        if override_file.exists():
+            override_file.unlink()
+        return
+
+    lines = ["services:\n"]
+    for service, ports in services.items():
+        lines.append(f"  {service}:\n    ports:\n")
+        lines.extend(ports)
+
+    override_file.write_text("".join(lines), encoding="utf-8")
 
 
 def _ensure_docker() -> None:
@@ -97,9 +237,36 @@ def _ensure_docker() -> None:
         raise typer.Exit(1)
 
 
+@deploy_app.command(name="init")
+def deploy_init():
+    """Initialize deployment config"""
+    _ensure_docker()
+
+    target = Path.cwd() / ".hohu" / "deploy"
+    target.mkdir(parents=True, exist_ok=True)
+    _sync_templates(target)
+
+    # 自动从 .env.example 生成 .env
+    env_file = target / ".env"
+    example_file = target / ".env.example"
+    if not env_file.exists() and example_file.exists():
+        shutil.copy2(example_file, env_file)
+
+    # 自动生成安全密钥和密码（仅首次，已存在则不覆盖）
+    if env_file.exists():
+        _generate_secrets(env_file)
+
+    console.print(f"[green]{i18n.t('deploy_init_success')}[/green]")
+    console.print(i18n.t("deploy_init_hint").format(env_file))
+
+
 @deploy_app.callback(invoke_without_command=True)
 def deploy(
     ctx: typer.Context,
+    init: bool = typer.Option(False, "--init", help=i18n.t("deploy_init_flag_help")),
+    no_migrate: bool = typer.Option(
+        False, "--no-migrate", help=i18n.t("deploy_no_migrate_help")
+    ),
 ):
     """Deploy"""
     if ctx.invoked_subcommand is not None:
@@ -108,6 +275,7 @@ def deploy(
     _ensure_docker()
     deploy_dir = _ensure_deploy_dir()
     _ensure_env(deploy_dir)
+    _update_port_override(deploy_dir)
     cmd = _compose_cmd(deploy_dir)
 
     # Step 1: Pull images
@@ -120,13 +288,7 @@ def deploy(
 
     # Step 3: Wait for PostgreSQL
     console.print(f"[bold cyan]{i18n.t('deploy_waiting_pg')}[/bold cyan]")
-    env_file = deploy_dir / ".env"
-    pg_user = "hohu"
-    if env_file.exists():
-        for line in env_file.read_text().splitlines():
-            if line.startswith("POSTGRES_USER="):
-                pg_user = line.split("=", 1)[1].strip()
-                break
+    pg_user = _read_env_value(deploy_dir, "POSTGRES_USER", "hohu")
 
     for _ in range(30):
         result = run_command_silent(
@@ -141,13 +303,18 @@ def deploy(
         console.print(f"[red]{i18n.t('deploy_pg_timeout')}[/red]")
         raise typer.Exit(1)
 
-    # Step 4: Migrate
-    console.print(f"[bold cyan]{i18n.t('deploy_migrating')}[/bold cyan]")
-    run_command(cmd + ["run", "--rm", "db-migrator"], cwd=deploy_dir)
+    # Step 4: Migrate (+ init if --init specified)
+    if not no_migrate or init:
+        console.print(f"[bold cyan]{i18n.t('deploy_migrating')}[/bold cyan]")
+        env_flag = ["-e", "RUN_INIT=1"] if init else []
+        run_command(cmd + ["run", "--rm", *env_flag, "db-migrator"], cwd=deploy_dir)
 
     # Step 5: Start all
     console.print(f"[bold cyan]{i18n.t('deploy_starting_all')}[/bold cyan]")
-    run_command(cmd + ["up", "-d"], cwd=deploy_dir)
+    if _is_nginx_enabled(deploy_dir):
+        run_command(cmd + ["up", "-d"], cwd=deploy_dir)
+    else:
+        run_command(cmd + ["up", "-d"] + _APP_SERVICES, cwd=deploy_dir)
 
     console.print(f"\n[bold green]{i18n.t('deploy_success')}[/bold green]")
 
@@ -155,6 +322,7 @@ def deploy(
 @deploy_app.command(name="down")
 def deploy_down():
     """Stop all services"""
+    _ensure_docker()
     deploy_dir = _ensure_deploy_dir()
     cmd = _compose_cmd(deploy_dir)
     console.print(f"[bold yellow]{i18n.t('deploy_stopping')}[/bold yellow]")
@@ -168,6 +336,7 @@ def deploy_logs(
     services: list[str] | None = typer.Argument(None, help="Service names"),
 ):
     """View service logs"""
+    _ensure_docker()
     deploy_dir = _ensure_deploy_dir()
     cmd = _compose_cmd(deploy_dir) + ["logs"]
     if follow:
@@ -184,6 +353,7 @@ def deploy_logs(
 @deploy_app.command(name="ps")
 def deploy_ps():
     """Show service status"""
+    _ensure_docker()
     deploy_dir = _ensure_deploy_dir()
     cmd = _compose_cmd(deploy_dir) + ["ps"]
     run_command(cmd, cwd=deploy_dir, show_command=False)
@@ -192,15 +362,20 @@ def deploy_ps():
 @deploy_app.command(name="pull")
 def deploy_pull():
     """Pull latest images and restart"""
+    _ensure_docker()
     deploy_dir = _ensure_deploy_dir()
     _ensure_env(deploy_dir)
+    _update_port_override(deploy_dir)
     cmd = _compose_cmd(deploy_dir)
 
     console.print(f"[bold cyan]{i18n.t('deploy_pulling')}[/bold cyan]")
     run_command(cmd + ["pull"], cwd=deploy_dir)
 
     console.print(f"[bold cyan]{i18n.t('deploy_restarting')}[/bold cyan]")
-    run_command(cmd + ["up", "-d"], cwd=deploy_dir)
+    if _is_nginx_enabled(deploy_dir):
+        run_command(cmd + ["up", "-d"], cwd=deploy_dir)
+    else:
+        run_command(cmd + ["up", "-d"] + _APP_SERVICES, cwd=deploy_dir)
 
     console.print(f"[green]{i18n.t('deploy_updated')}[/green]")
 
@@ -210,6 +385,7 @@ def deploy_restart(
     services: list[str] | None = typer.Argument(None, help="Service names"),
 ):
     """Restart services"""
+    _ensure_docker()
     deploy_dir = _ensure_deploy_dir()
     cmd = _compose_cmd(deploy_dir) + ["restart"]
     if services:

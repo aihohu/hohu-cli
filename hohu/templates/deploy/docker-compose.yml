@@ -13,7 +13,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hohu_secret_6789}
       POSTGRES_DB: ${POSTGRES_DB:-hohu_admin}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hohu}"]
       interval: 10s
@@ -59,9 +59,11 @@ services:
       - |
         echo "Running database migrations..."
         alembic upgrade head
-        echo "Initializing database..."
-        python scripts/init_db.py
-        echo "Migration and initialization complete."
+        if [ "$$RUN_INIT" = "1" ]; then
+          echo "Initializing database..."
+          python scripts/init_db.py
+        fi
+        echo "Done."
     profiles:
       - migrate
     networks:
@@ -92,7 +94,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -115,7 +117,7 @@ services:
       hohu-admin-api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:80/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -129,8 +131,10 @@ services:
       - hohu-network
 
   # ============================
-  # Nginx Reverse Proxy (SSL)
+  # Nginx Reverse Proxy
   # ============================
+  # 默认 HTTP 模式，设置 ENABLE_SSL=true 启用 HTTPS
+  # 如使用自己的 nginx，可注释掉此服务，参考 nginx/proxy-snippet.conf
   nginx:
     image: nginx:alpine
     container_name: hohu-nginx
@@ -138,16 +142,21 @@ services:
     ports:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
+    environment:
+      ENABLE_SSL: ${ENABLE_SSL:-false}
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx.conf:/etc/nginx/custom/nginx.conf:ro
+      - ./nginx/nginx-ssl.conf:/etc/nginx/custom/nginx-ssl.conf:ro
+      - ./nginx/entrypoint.sh:/etc/nginx/custom/entrypoint.sh:ro
       - ${SSL_CERT_PATH:-./ssl}:/etc/nginx/ssl:ro
       - certbot-www:/var/www/certbot:ro
       - certbot-conf:/etc/letsencrypt:ro
+    entrypoint: ["sh", "/etc/nginx/custom/entrypoint.sh"]
     depends_on:
       hohu-admin-web:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:80/"]
       interval: 30s
       timeout: 10s
       retries: 3
