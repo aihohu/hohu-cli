@@ -73,6 +73,8 @@ hohu/
 
 每次完成代码编写，使用 `uv run ruff format .` 格式化代码
 
+使用 uv run ruff check .` 和 `uv run ruff check . --output-format=github` 检查代码
+
 所有测试/运行python 都需在虚拟环境中 执行
 
 执行添加新功能或者修复bug时，完成后给出commit消息
