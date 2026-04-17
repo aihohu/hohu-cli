@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.1.9
+
+### Features
+
+- **`hohu build` — Source Build** — Build Docker images from local source code with options: `--only` (backend/frontend), `--tag`, `--no-cache`, `--reset`; auto-initializes deploy config on first run
+- **External PostgreSQL / Redis** — Add `ENABLE_POSTGRES` / `ENABLE_REDIS` toggles in `.env` to disable built-in containers and connect to external instances; `docker-compose.override.yml` generated dynamically based on infra flags
+- **`hohu deploy init`** — New subcommand to initialize deployment directory, sync templates, and generate secrets independently
+- **Deploy smart pull** — Detect local-built images and skip pulling application images, only pull infrastructure images (postgres, redis, nginx)
+- **Refactor `hohu dev`** — Extract monolithic dev function into smaller focused helpers for maintainability
+
+### Documentation
+
+- Add `hohu build` and external database docs to README (English & Chinese)
+- Add ruff complexity rules (C901, PLR0912, PLR0915) to CLAUDE.md and pyproject.toml
+- Restructure deployment docs with Quick Start sections for source build and official image flows
+
+**Full Changelog**: `v0.1.8...v0.1.9`
+
 ## v0.1.8
 
 ### Features
