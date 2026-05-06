@@ -435,6 +435,10 @@ def deploy(
     _pull_images(cmd, deploy_dir, pg_enabled, redis_enabled)
     _start_infra(cmd, deploy_dir, pg_enabled, redis_enabled)
 
+    # Ensure uploads directory exists with correct permissions (bind mount)
+    uploads_dir = deploy_dir / "uploads"
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+
     # Step 4: Migrate (+ init if --init specified)
     if not no_migrate or init:
         console.print(f"[bold cyan]{i18n.t('deploy_migrating')}[/bold cyan]")

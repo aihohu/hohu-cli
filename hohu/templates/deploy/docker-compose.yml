@@ -64,6 +64,8 @@ services:
           echo "Initializing database..."
           python scripts/init_db.py
         fi
+        echo "Syncing menus..."
+        python scripts/sync_menus.py
         echo "Done."
     profiles:
       - migrate
@@ -89,6 +91,11 @@ services:
       REDIS_DB: 0
       WORKER_ID: ${WORKER_ID:-1}
       UVICORN_WORKERS: ${UVICORN_WORKERS:-4}
+      SERVER_URL: ${SERVER_URL:-}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+      UPLOAD_MAX_SIZE: ${UPLOAD_MAX_SIZE:-10485760}
+    volumes:
+      - ./uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
