@@ -473,7 +473,8 @@ def _pull_images(
         pull_services.append("postgres")
     if redis_enabled:
         pull_services.append("redis")
-    pull_services.append("nginx")
+    if _is_nginx_enabled(deploy_dir):
+        pull_services.append("nginx")
 
     if is_local_build:
         console.print(f"[dim]{i18n.t('deploy_skip_pull_local')}[/dim]")
