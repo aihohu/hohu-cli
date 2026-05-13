@@ -1,6 +1,6 @@
 [project]
 name = "hohu"
-version = "0.1.9"
+version = "0.1.10"
 description = "A full-stack project management CLI tool for Hohu Admin ecosystem."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -24,6 +24,7 @@ classifiers = [
 
 dependencies = [
     "gitpython>=3.1.46",
+    "pyyaml>=6.0.3",
     "questionary>=2.1.1",
     "rich>=14.2.0",
     "ruff>=0.14.10",

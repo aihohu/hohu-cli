@@ -7,6 +7,7 @@ from pathlib import Path
 
 import questionary
 import typer
+import yaml
 from rich.console import Console
 
 from hohu.i18n import i18n
@@ -321,7 +322,7 @@ def _collect_redis_env(deploy_dir: Path) -> dict[str, str]:
 def _collect_port_overrides(
     deploy_dir: Path, pg_enabled: bool, redis_enabled: bool
 ) -> dict[str, list[str]]:
-    """从 .env 收集端口映射，返回 {service: [port_lines]}"""
+    """从 .env 收集端口映射，返回 {service: ["host:container"]}"""
     port_mappings = [
         ("WEB_PORT", "hohu-admin-web", 80),
         ("API_PORT", "hohu-admin-api", 8000),
@@ -349,83 +350,62 @@ def _collect_port_overrides(
                 f"[yellow]Warning: {env_key}={host_port} is out of range, skipping[/yellow]"
             )
             continue
-        services.setdefault(service, []).append(
-            f'      - "{host_port}:{container_port}"\n'
-        )
+        services.setdefault(service, []).append(f"{host_port}:{container_port}")
     return services
 
 
-def _append_infra_profiles(
-    lines: list[str], deploy_dir: Path, pg_enabled: bool, redis_enabled: bool
-) -> None:
-    """向 lines 追加被禁用基础设施服务的 profile 配置"""
+def _build_override_services(
+    deploy_dir: Path, pg_enabled: bool, redis_enabled: bool
+) -> dict:
+    """构建 docker-compose.override.yml 的 services 数据结构"""
+    services: dict = {}
+
     if not pg_enabled:
-        lines.append("  postgres:\n    profiles:\n      - external-infra\n")
+        services["postgres"] = {"profiles": ["external-infra"]}
         db_url = _read_env_value(deploy_dir, "DATABASE_URL", "")
-        lines.append("  db-migrator:\n")
+        migrator: dict = {}
         if db_url:
-            lines.append(f"    environment:\n      DATABASE_URL: {db_url}\n")
+            migrator["environment"] = {"DATABASE_URL": db_url}
+        services["db-migrator"] = migrator
+
     if not redis_enabled:
-        lines.append("  redis:\n    profiles:\n      - external-infra\n")
+        services["redis"] = {"profiles": ["external-infra"]}
 
-
-def _build_service_config(
-    api_env: dict[str, str], ports: dict[str, list[str]]
-) -> dict[str, dict[str, list[str]]]:
-    """合并环境变量和端口映射为按服务组织的配置"""
-    svc_config: dict[str, dict[str, list[str]]] = {}
+    # 合并外部数据库/Redis 环境变量到 api 服务
+    api_env: dict[str, str] = {}
+    if not pg_enabled:
+        api_env.update(_collect_pg_env(deploy_dir))
+    if not redis_enabled:
+        api_env.update(_collect_redis_env(deploy_dir))
     if api_env:
-        svc_config["hohu-admin-api"] = {
-            "env": [f"      {k}: {v}\n" for k, v in api_env.items()]
-        }
-    for svc, port_lines in ports.items():
-        svc_config.setdefault(svc, {})
-        svc_config[svc]["ports"] = port_lines
-    return svc_config
+        services.setdefault("hohu-admin-api", {})["environment"] = api_env
 
+    # 合并端口映射
+    ports = _collect_port_overrides(deploy_dir, pg_enabled, redis_enabled)
+    for svc, port_list in ports.items():
+        services.setdefault(svc, {})["ports"] = port_list
 
-def _write_service_sections(
-    lines: list[str], svc_config: dict[str, dict[str, list[str]]]
-) -> None:
-    """向 lines 追加各服务的 environment 和 ports 段"""
-    for svc, cfg in svc_config.items():
-        lines.append(f"  {svc}:\n")
-        if "env" in cfg:
-            lines.append("    environment:\n")
-            lines.extend(cfg["env"])
-        if "ports" in cfg:
-            lines.append("    ports:\n")
-            lines.extend(cfg["ports"])
+    return services
 
 
 def _update_infra_override(deploy_dir: Path) -> None:
     """根据 ENABLE_POSTGRES/ENABLE_REDIS 和端口配置生成 override 文件"""
     pg_enabled = _is_postgres_enabled(deploy_dir)
     redis_enabled = _is_redis_enabled(deploy_dir)
-    all_enabled = pg_enabled and redis_enabled
     override_file = deploy_dir / "docker-compose.override.yml"
 
-    ports = _collect_port_overrides(deploy_dir, pg_enabled, redis_enabled)
+    services = _build_override_services(deploy_dir, pg_enabled, redis_enabled)
 
-    if all_enabled and not ports:
+    if not services:
         if override_file.exists():
             override_file.unlink()
         return
 
-    lines = ["services:\n"]
-    _append_infra_profiles(lines, deploy_dir, pg_enabled, redis_enabled)
-
-    # 合并 hohu-admin-api 环境变量
-    api_env: dict[str, str] = {}
-    if not pg_enabled:
-        api_env.update(_collect_pg_env(deploy_dir))
-    if not redis_enabled:
-        api_env.update(_collect_redis_env(deploy_dir))
-
-    svc_config = _build_service_config(api_env, ports)
-    _write_service_sections(lines, svc_config)
-
-    override_file.write_text("".join(lines), encoding="utf-8")
+    override = {"services": services}
+    override_file.write_text(
+        yaml.dump(override, default_flow_style=False, allow_unicode=True),
+        encoding="utf-8",
+    )
 
 
 def _get_app_services(deploy_dir: Path) -> list[str]:
