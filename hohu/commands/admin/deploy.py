@@ -11,7 +11,7 @@ import yaml
 from rich.console import Console
 
 from hohu.i18n import i18n
-from hohu.utils.process import run_command, run_command_silent
+from hohu.utils.process import resolve_command, run_command, run_command_silent
 
 console = Console()
 deploy_app = typer.Typer(help=i18n.t("deploy_help"))
@@ -591,8 +591,12 @@ def deploy_logs(
         cmd.extend(services)
 
     # logs with -f is interactive, use subprocess.run directly
+    resolved = resolve_command(cmd)
+    if not resolved:
+        console.print(f"[red]{i18n.t('cmd_not_found').format(cmd[0])}[/red]")
+        raise typer.Exit(1)
     use_shell = sys.platform == "win32"
-    run_cmd = subprocess.list2cmdline(cmd) if use_shell else cmd
+    run_cmd = subprocess.list2cmdline(resolved) if use_shell else resolved
     subprocess.run(run_cmd, cwd=deploy_dir, shell=use_shell)
 
 
