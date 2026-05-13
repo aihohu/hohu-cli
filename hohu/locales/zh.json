@@ -99,5 +99,11 @@
   "build_col_image": "镜像",
   "build_col_tag": "标签",
   "build_success": "构建完成！",
-  "build_next_step": "下一步：运行 hohu deploy 使用本地镜像部署"
+  "build_next_step": "下一步：运行 hohu deploy 使用本地镜像部署",
+  "deploy_template_outdated": "检测到模板版本 {} → {}，以下文件需要更新：",
+  "deploy_template_up_to_date": "模板已是最新版本。",
+  "deploy_template_overwrite_confirm": "是否覆盖以上文件？",
+  "deploy_template_overwrite_skipped": "跳过模板更新（加 --force 跳过确认直接更新）。",
+  "deploy_template_updated": "模板已更新到版本 {}。",
+  "deploy_init_force_help": "强制覆盖所有模板文件（用于版本升级）"
 }

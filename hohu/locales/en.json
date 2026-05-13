@@ -99,5 +99,11 @@
   "build_col_image": "Image",
   "build_col_tag": "Tag",
   "build_success": "Build complete!",
-  "build_next_step": "Next: run 'hohu deploy' to deploy with local images"
+  "build_next_step": "Next: run 'hohu deploy' to deploy with local images",
+  "deploy_template_outdated": "Template version changed {} → {}, the following files need updating:",
+  "deploy_template_up_to_date": "Templates are up to date.",
+  "deploy_template_overwrite_confirm": "Overwrite the above files?",
+  "deploy_template_overwrite_skipped": "Template update skipped (use --force to overwrite without confirmation).",
+  "deploy_template_updated": "Templates updated to version {}.",
+  "deploy_init_force_help": "Force overwrite all template files (for version upgrades)"
 }
