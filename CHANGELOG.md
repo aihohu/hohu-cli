@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.1.10
+
+### Features
+
+- **Uploads persistence** — Mount `./uploads` as a bind volume in backend container; auto-create uploads directory with correct permissions on deploy
+- **Nginx `/uploads/` proxy** — Add reverse proxy rule for uploaded files in all nginx configs (`nginx.conf`, `nginx-ssl.conf`, `proxy-snippet.conf`)
+- **Auto menu sync on deploy** — Run `sync_menus.py` automatically after database initialization during migration
+- **New env vars** — Add `SERVER_URL`, `UPLOAD_DIR`, `UPLOAD_MAX_SIZE` configuration options in `.env.example`
+- **Version-aware template sync** — `deploy init` detects template version changes, diffs file content, and prompts before overwriting; add `--force` to skip confirmation
+- **`.template-version`** — Add version marker file to deploy templates for upgrade detection
+
+### Bug Fixes
+
+- **Skip nginx pull when disabled** — Do not pull nginx image when `ENABLE_NGINX=false`
+- **`deploy logs` error handling** — Add command resolution and friendly error when `docker` is not found
+
+### Refactor
+
+- **PyYAML for override generation** — Replace string concatenation with `yaml.dump()` in `docker-compose.override.yml` generation to correctly handle special characters in env values
+
+**Full Changelog**: `v0.1.9...v0.1.10`
+
 ## v0.1.9
 
 ### Features
