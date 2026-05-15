@@ -458,6 +458,25 @@ def deploy_init(
     console.print(i18n.t("deploy_init_hint").format(env_file))
 
 
+def _get_infra_images(
+    deploy_dir: Path,
+    pg_enabled: bool,
+    redis_enabled: bool,
+) -> list[str]:
+    """从 docker-compose.yml 读取基础设施镜像名称"""
+    compose_file = deploy_dir / "docker-compose.yml"
+    data = yaml.safe_load(compose_file.read_text(encoding="utf-8"))
+    services = data.get("services", {})
+    images = []
+    if pg_enabled and "postgres" in services:
+        images.append(services["postgres"]["image"])
+    if redis_enabled and "redis" in services:
+        images.append(services["redis"]["image"])
+    if _is_nginx_enabled(deploy_dir) and "nginx" in services:
+        images.append(services["nginx"]["image"])
+    return images
+
+
 def _pull_images(
     cmd: list[str],
     deploy_dir: Path,
@@ -468,17 +487,10 @@ def _pull_images(
     api_image = _read_env_value(deploy_dir, "API_IMAGE", "")
     is_local_build = api_image and "/" not in api_image
 
-    pull_services = []
-    if pg_enabled:
-        pull_services.append("postgres")
-    if redis_enabled:
-        pull_services.append("redis")
-    if _is_nginx_enabled(deploy_dir):
-        pull_services.append("nginx")
-
     if is_local_build:
         console.print(f"[dim]{i18n.t('deploy_skip_pull_local')}[/dim]")
-        run_command(cmd + ["pull", "--no-deps"] + pull_services, cwd=deploy_dir)
+        for img in _get_infra_images(deploy_dir, pg_enabled, redis_enabled):
+            run_command(["docker", "pull", img], cwd=deploy_dir)
     else:
         console.print(f"[bold cyan]{i18n.t('deploy_pulling')}[/bold cyan]")
         run_command(cmd + ["pull"], cwd=deploy_dir)
@@ -617,21 +629,10 @@ def deploy_pull():
     _ensure_env(deploy_dir)
     _update_infra_override(deploy_dir)
     cmd = _compose_cmd(deploy_dir)
+    pg_enabled = _is_postgres_enabled(deploy_dir)
+    redis_enabled = _is_redis_enabled(deploy_dir)
 
-    console.print(f"[bold cyan]{i18n.t('deploy_pulling')}[/bold cyan]")
-    api_image = _read_env_value(deploy_dir, "API_IMAGE", "")
-    is_local_build = api_image and "/" not in api_image
-    if is_local_build:
-        pull_svcs = []
-        if _is_postgres_enabled(deploy_dir):
-            pull_svcs.append("postgres")
-        if _is_redis_enabled(deploy_dir):
-            pull_svcs.append("redis")
-        if _is_nginx_enabled(deploy_dir):
-            pull_svcs.append("nginx")
-        run_command(cmd + ["pull", "--no-deps"] + pull_svcs, cwd=deploy_dir)
-    else:
-        run_command(cmd + ["pull"], cwd=deploy_dir)
+    _pull_images(cmd, deploy_dir, pg_enabled, redis_enabled)
 
     console.print(f"[bold cyan]{i18n.t('deploy_restarting')}[/bold cyan]")
     if _is_nginx_enabled(deploy_dir):

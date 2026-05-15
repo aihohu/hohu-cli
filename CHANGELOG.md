@@ -4,8 +4,12 @@
 
 ### Bug Fixes
 
-- **Local build pull failure** — Use `--no-deps` flag when pulling infrastructure images with local-built app images, preventing `docker compose pull` from cascading to pull non-existent `hohu-admin:source` and `hohu-admin-web:source` from Docker Hub
-- **`deploy pull` subcommand** — Apply same local-build detection and `--no-deps` logic to the `hohu deploy pull` subcommand
+- **Local build pull failure** — Use `docker pull` directly for infrastructure images (postgres, redis, nginx) instead of `docker compose pull`, avoiding cascading through `depends_on` to pull non-existent local-built images from Docker Hub
+
+### Refactor
+
+- **Dynamic infra image names** — Read infrastructure image tags from `docker-compose.yml` at runtime instead of hardcoding, preventing tag drift when templates are updated
+- **Eliminate duplicated pull logic** — Reuse `_pull_images()` in `deploy pull` subcommand instead of duplicating local-build detection and image pull code
 
 **Full Changelog**: `v0.1.10...v0.1.11`
 
