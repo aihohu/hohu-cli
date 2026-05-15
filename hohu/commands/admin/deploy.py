@@ -478,7 +478,7 @@ def _pull_images(
 
     if is_local_build:
         console.print(f"[dim]{i18n.t('deploy_skip_pull_local')}[/dim]")
-        run_command(cmd + ["pull"] + pull_services, cwd=deploy_dir)
+        run_command(cmd + ["pull", "--no-deps"] + pull_services, cwd=deploy_dir)
     else:
         console.print(f"[bold cyan]{i18n.t('deploy_pulling')}[/bold cyan]")
         run_command(cmd + ["pull"], cwd=deploy_dir)
@@ -619,7 +619,19 @@ def deploy_pull():
     cmd = _compose_cmd(deploy_dir)
 
     console.print(f"[bold cyan]{i18n.t('deploy_pulling')}[/bold cyan]")
-    run_command(cmd + ["pull"], cwd=deploy_dir)
+    api_image = _read_env_value(deploy_dir, "API_IMAGE", "")
+    is_local_build = api_image and "/" not in api_image
+    if is_local_build:
+        pull_svcs = []
+        if _is_postgres_enabled(deploy_dir):
+            pull_svcs.append("postgres")
+        if _is_redis_enabled(deploy_dir):
+            pull_svcs.append("redis")
+        if _is_nginx_enabled(deploy_dir):
+            pull_svcs.append("nginx")
+        run_command(cmd + ["pull", "--no-deps"] + pull_svcs, cwd=deploy_dir)
+    else:
+        run_command(cmd + ["pull"], cwd=deploy_dir)
 
     console.print(f"[bold cyan]{i18n.t('deploy_restarting')}[/bold cyan]")
     if _is_nginx_enabled(deploy_dir):
