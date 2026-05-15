@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.11
+
+### Bug Fixes
+
+- **Local build pull failure** — Use `--no-deps` flag when pulling infrastructure images with local-built app images, preventing `docker compose pull` from cascading to pull non-existent `hohu-admin:source` and `hohu-admin-web:source` from Docker Hub
+- **`deploy pull` subcommand** — Apply same local-build detection and `--no-deps` logic to the `hohu deploy pull` subcommand
+
+**Full Changelog**: `v0.1.10...v0.1.11`
+
 ## v0.1.10
 
 ### Features
