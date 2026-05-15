@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.1.12
+
+### Bug Fixes
+
+- **Local build pull failure** — Use `docker pull` directly for infrastructure images (postgres, redis, nginx) instead of `docker compose pull`, avoiding cascading through `depends_on` to pull non-existent local-built images from Docker Hub
+
+### Refactor
+
+- **Dynamic infra image names** — Read infrastructure image tags from `docker-compose.yml` at runtime instead of hardcoding, preventing tag drift when templates are updated
+- **Eliminate duplicated pull logic** — Reuse `_pull_images()` in `deploy pull` subcommand instead of duplicating local-build detection and image pull code
+
+**Full Changelog**: `v0.1.11...v0.1.12`
+
 ## v0.1.11
 
 ### Bug Fixes
