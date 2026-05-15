@@ -47,6 +47,7 @@ services:
   db-migrator:
     image: ${API_IMAGE:-ghcr.io/aihohu/hohu-admin}:${IMAGE_TAG:-latest}
     container_name: hohu-db-migrator
+    env_file: .env
     environment:
       ENV: prod
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hohu}:${POSTGRES_PASSWORD:-hohu_secret_6789}@postgres:5432/${POSTGRES_DB:-hohu_admin}
@@ -79,6 +80,7 @@ services:
     image: ${API_IMAGE:-ghcr.io/aihohu/hohu-admin}:${IMAGE_TAG:-latest}
     container_name: hohu-admin-api
     restart: unless-stopped
+    env_file: .env
     environment:
       ENV: prod
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hohu}:${POSTGRES_PASSWORD:-hohu_secret_6789}@postgres:5432/${POSTGRES_DB:-hohu_admin}
