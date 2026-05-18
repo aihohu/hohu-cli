@@ -658,3 +658,72 @@ def deploy_restart(
         cmd.extend(services)
     run_command(cmd, cwd=deploy_dir)
     console.print(f"[green]{i18n.t('deploy_restarted')}[/green]")
+
+
+@deploy_app.command(name="upgrade")
+def deploy_upgrade(
+    no_cache: bool = typer.Option(
+        False,
+        "--no-cache",
+        help=i18n.t("build_no_cache_help"),
+    ),
+    no_migrate: bool = typer.Option(
+        False, "--no-migrate", help=i18n.t("deploy_no_migrate_help")
+    ),
+    init: bool = typer.Option(False, "--init", help=i18n.t("deploy_init_flag_help")),
+):
+    """Full upgrade: git pull → build → down → deploy"""
+    from hohu.commands.admin.build import (
+        _build_components,
+        _update_env_for_local_images,
+    )
+    from hohu.utils.project import ProjectManager
+
+    _ensure_docker()
+    project_root = ProjectManager.find_root()
+    if project_root is None:
+        console.print(f"[red]{i18n.t('not_in_project')}[/red]")
+        raise typer.Exit(1)
+
+    # Step 1: Git pull
+    console.print(f"[bold cyan]{i18n.t('upgrade_git_pull')}[/bold cyan]")
+    run_command(["git", "pull"], cwd=project_root)
+
+    # Step 2: Build
+    console.print(f"[bold cyan]{i18n.t('upgrade_building')}[/bold cyan]")
+    built = _build_components(project_root, only=None, tag="source", no_cache=no_cache)
+    _update_env_for_local_images(project_root, built, "source")
+
+    # Step 3: Down
+    deploy_dir = _ensure_deploy_dir()
+    _ensure_env(deploy_dir)
+    _update_infra_override(deploy_dir)
+    cmd = _compose_cmd(deploy_dir)
+    console.print(f"[bold yellow]{i18n.t('deploy_stopping')}[/bold yellow]")
+    run_command(cmd + ["down"], cwd=deploy_dir)
+
+    # Step 4: Deploy
+    pg_enabled = _is_postgres_enabled(deploy_dir)
+    redis_enabled = _is_redis_enabled(deploy_dir)
+
+    _pull_images(cmd, deploy_dir, pg_enabled, redis_enabled)
+    _start_infra(cmd, deploy_dir, pg_enabled, redis_enabled)
+
+    uploads_dir = deploy_dir / "uploads"
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+
+    if not no_migrate or init:
+        console.print(f"[bold cyan]{i18n.t('deploy_migrating')}[/bold cyan]")
+        env_flag = ["-e", "RUN_INIT=1"] if init else []
+        run_command(cmd + ["run", "--rm", *env_flag, "db-migrator"], cwd=deploy_dir)
+
+    console.print(f"[bold cyan]{i18n.t('deploy_starting_all')}[/bold cyan]")
+    if _is_nginx_enabled(deploy_dir):
+        run_command(cmd + ["up", "-d"], cwd=deploy_dir)
+    else:
+        run_command(
+            cmd + ["up", "-d"] + _get_app_services(deploy_dir),
+            cwd=deploy_dir,
+        )
+
+    console.print(f"\n[bold green]{i18n.t('upgrade_success')}[/bold green]")
