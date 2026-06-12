@@ -67,6 +67,8 @@ services:
         fi
         echo "Syncing menus..."
         python scripts/sync_menus.py
+        echo "Seeding system configs..."
+        python scripts/seed_config.py
         echo "Done."
     profiles:
       - migrate
