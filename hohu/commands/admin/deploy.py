@@ -410,7 +410,7 @@ def _update_infra_override(deploy_dir: Path) -> None:
 
 def _get_app_services(deploy_dir: Path) -> list[str]:
     """根据 ENABLE 开关返回需要启动的服务列表"""
-    services = ["hohu-admin-api", "hohu-admin-web"]
+    services = ["hohu-admin-api", "hohu-admin-scheduler", "hohu-admin-web"]
     if _is_postgres_enabled(deploy_dir):
         services.insert(0, "postgres")
     if _is_redis_enabled(deploy_dir):

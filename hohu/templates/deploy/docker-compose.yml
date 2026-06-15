@@ -85,6 +85,8 @@ services:
     env_file: .env
     environment:
       ENV: prod
+      # 仅承担 FastAPI，调度器由独立的 hohu-admin-scheduler 服务运行
+      APP_ROLE: api
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hohu}:${POSTGRES_PASSWORD:-hohu_secret_6789}@postgres:5432/${POSTGRES_DB:-hohu_admin}
       SECRET_KEY: ${SECRET_KEY:-change_me_in_production}
       ALGORITHM: HS256
@@ -117,6 +119,44 @@ services:
       driver: json-file
       options:
         max-size: "50m"
+        max-file: "3"
+    networks:
+      - hohu-network
+
+  # ============================
+  # Scheduler (APScheduler 独立进程)
+  # ============================
+  # 将定时任务调度与 web 进程隔离，避免多 worker 重复触发
+  # 通过 Redis pub/sub 接收 web 进程发来的配置变更和手动触发事件
+  hohu-admin-scheduler:
+    image: ${API_IMAGE:-ghcr.io/aihohu/hohu-admin}:${IMAGE_TAG:-latest}
+    container_name: hohu-admin-scheduler
+    restart: unless-stopped
+    command: ["python", "-m", "app.scheduler_worker"]
+    env_file: .env
+    environment:
+      ENV: prod
+      APP_ROLE: scheduler
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hohu}:${POSTGRES_PASSWORD:-hohu_secret_6789}@postgres:5432/${POSTGRES_DB:-hohu_admin}
+      SECRET_KEY: ${SECRET_KEY:-change_me_in_production}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-hohu_redis_6789}
+      REDIS_DB: 0
+      WORKER_ID: ${WORKER_ID:-1}
+      SERVER_URL: ${SERVER_URL:-}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_healthy
+        required: false
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
         max-file: "3"
     networks:
       - hohu-network
