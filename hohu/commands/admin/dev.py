@@ -90,6 +90,9 @@ def start_process(component: str, target: str, root) -> subprocess.Popen | None:
 
     env = os.environ.copy()
     env["PYTHONUTF8"] = "1"
+    # 单进程开发模式：让 web 进程同时承担调度器（生产部署由独立 scheduler 进程承担）
+    if component == "Backend":
+        env.setdefault("APP_ROLE", "all")
     return subprocess.Popen(
         resolved_cmd,
         cwd=cwd,
