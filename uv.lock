@@ -61,7 +61,7 @@ wheels = [
 
 [[package]]
 name = "hohu"
-version = "0.1.10"
+version = "0.1.13"
 source = { editable = "." }
 dependencies = [
     { name = "gitpython" },

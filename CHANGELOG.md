@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.1.13
+
+### Features
+
+- **Standalone scheduler service** — Add `hohu-admin-scheduler` container running `app.scheduler_worker` to isolate APScheduler from the web process; API container now defaults to `APP_ROLE=api` to avoid duplicate triggers across workers
+- **`hohu admin deploy upgrade`** — New one-click subcommand for full redeployment (pull → migrate → recreate)
+- **Env file for API containers** — Mount `.env` into `api` and `db-migrator` containers for simpler local overrides
+
+### Bug Fixes
+
+- **Seed system configs on migrate** — Run `seed_config.py` alongside `sync_menus.py` in the db-migrator deploy step
+- **Dev mode APP_ROLE** — Inject `APP_ROLE=all` for backend under `hohu dev`, since the deploy template now defaults to `api` only
+- **Nginx body size & SERVER_URL defaults** — Add `client_max_body_size` to nginx configs and a `SERVER_URL` default in `.env.example`
+
+**Full Changelog**: `v0.1.12...v0.1.13`
+
 ## v0.1.12
 
 ### Bug Fixes
