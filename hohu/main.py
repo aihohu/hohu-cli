@@ -8,6 +8,7 @@ from hohu.commands.admin.deploy import deploy_app
 from hohu.commands.admin.dev import dev
 from hohu.commands.admin.init import init
 from hohu.commands.admin.migrate import migrate
+from hohu.commands.admin.monitoring import monitoring_app
 from hohu.commands.system import set_language, show_info, system_app
 from hohu.i18n import i18n
 
@@ -47,6 +48,7 @@ app.command(name="build", help=i18n.t("build_help"))(build)
 app.command(name="migrate", help=i18n.t("migrate_help"))(migrate)
 
 app.add_typer(deploy_app, name="deploy")
+app.add_typer(monitoring_app, name="monitoring")
 app.add_typer(system_app, name="system")
 
 app.command(name="lang", help=i18n.t("system_lang_help"))(set_language)

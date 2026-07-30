@@ -21,7 +21,7 @@ TEMPLATES_DIR = Path(__file__).parent.parent.parent / "templates" / "deploy"
 # .env 中需要自动生成的密钥字段
 # SECRET_KEY 用 hex，密码用字母数字混合
 SECRET_FIELDS = {"SECRET_KEY": 32}
-PASSWORD_FIELDS = {"POSTGRES_PASSWORD", "REDIS_PASSWORD"}
+PASSWORD_FIELDS = {"POSTGRES_PASSWORD", "REDIS_PASSWORD", "GRAFANA_ADMIN_PASSWORD"}
 _PASSWORD_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 
@@ -328,6 +328,8 @@ def _collect_port_overrides(
         ("API_PORT", "hohu-admin-api", 8000),
         ("PG_PORT", "postgres", 5432),
         ("REDIS_PORT", "redis", 6379),
+        ("PROMETHEUS_PORT", "prometheus", 9090),
+        ("GRAFANA_PORT", "grafana", 3000),
     ]
     disabled = {"postgres": not pg_enabled, "redis": not redis_enabled}
     services: dict[str, list[str]] = {}

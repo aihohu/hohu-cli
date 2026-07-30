@@ -108,5 +108,15 @@
   "deploy_init_force_help": "强制覆盖所有模板文件（用于版本升级）",
   "upgrade_git_pull": "正在拉取最新代码...",
   "upgrade_building": "正在构建镜像...",
-  "upgrade_success": "升级部署完成！"
+  "upgrade_success": "升级部署完成！",
+  "monitoring_help": "监控栈管理（Prometheus + Grafana，profile: monitoring）",
+  "monitoring_init_help": "初始化监控栈配置（需先 hohu deploy init）",
+  "monitoring_init_force_help": "强制覆盖本地修改",
+  "monitoring_init_success": "监控栈配置已初始化！",
+  "monitoring_init_hint": "如需改端口或 Grafana 密码，编辑 {} 后运行 hohu monitoring up",
+  "monitoring_not_initialized": "未找到 .hohu/deploy/ 目录，请先运行 hohu deploy init",
+  "monitoring_up_starting": "正在启动监控栈...",
+  "monitoring_up_success": "监控栈已启动（Prometheus :9090 + Grafana :3000）",
+  "monitoring_down_success": "监控栈已停止",
+  "monitoring_restarted": "监控栈已重启"
 }

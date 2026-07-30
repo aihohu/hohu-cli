@@ -108,5 +108,15 @@
   "deploy_init_force_help": "Force overwrite all template files (for version upgrades)",
   "upgrade_git_pull": "Pulling latest code...",
   "upgrade_building": "Building images...",
-  "upgrade_success": "Upgrade deployment complete!"
+  "upgrade_success": "Upgrade deployment complete!",
+  "monitoring_help": "Monitoring stack management (Prometheus + Grafana, profile: monitoring)",
+  "monitoring_init_help": "Initialize monitoring stack config (requires hohu deploy init first)",
+  "monitoring_init_force_help": "Force overwrite local modifications",
+  "monitoring_init_success": "Monitoring stack config initialized!",
+  "monitoring_init_hint": "Edit {} to change ports or Grafana password, then run hohu monitoring up",
+  "monitoring_not_initialized": ".hohu/deploy/ not found, please run hohu deploy init first",
+  "monitoring_up_starting": "Starting monitoring stack...",
+  "monitoring_up_success": "Monitoring stack started (Prometheus :9090 + Grafana :3000)",
+  "monitoring_down_success": "Monitoring stack stopped",
+  "monitoring_restarted": "Monitoring stack restarted"
 }
