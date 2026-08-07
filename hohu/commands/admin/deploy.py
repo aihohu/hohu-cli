@@ -79,6 +79,12 @@ def _get_template_version(directory: Path) -> str:
     return ""
 
 
+def _ensure_storage_dirs(deploy_dir: Path) -> None:
+    """Create persistent public/private storage roots before containers start."""
+    for directory_name in ("uploads", "private_uploads"):
+        (deploy_dir / directory_name).mkdir(parents=True, exist_ok=True)
+
+
 def _copy_template_item(src: Path, dest: Path) -> None:
     """复制单个模板项（文件或目录），自动修复换行符"""
     if src.is_dir():
@@ -231,6 +237,7 @@ def _ensure_deploy_dir() -> Path:
         raise typer.Exit(1)
 
     _sync_templates(deploy_dir)
+    _ensure_storage_dirs(deploy_dir)
     return deploy_dir
 
 
@@ -445,6 +452,7 @@ def deploy_init(
     target = Path.cwd() / ".hohu" / "deploy"
     target.mkdir(parents=True, exist_ok=True)
     _sync_templates(target, force=force)
+    _ensure_storage_dirs(target)
 
     # 自动从 .env.example 生成 .env
     env_file = target / ".env"
@@ -555,10 +563,6 @@ def deploy(
 
     _pull_images(cmd, deploy_dir, pg_enabled, redis_enabled)
     _start_infra(cmd, deploy_dir, pg_enabled, redis_enabled)
-
-    # Ensure uploads directory exists with correct permissions (bind mount)
-    uploads_dir = deploy_dir / "uploads"
-    uploads_dir.mkdir(parents=True, exist_ok=True)
 
     # Step 4: Migrate (+ init if --init specified)
     if not no_migrate or init:
@@ -710,9 +714,6 @@ def deploy_upgrade(
 
     _pull_images(cmd, deploy_dir, pg_enabled, redis_enabled)
     _start_infra(cmd, deploy_dir, pg_enabled, redis_enabled)
-
-    uploads_dir = deploy_dir / "uploads"
-    uploads_dir.mkdir(parents=True, exist_ok=True)
 
     if not no_migrate or init:
         console.print(f"[bold cyan]{i18n.t('deploy_migrating')}[/bold cyan]")

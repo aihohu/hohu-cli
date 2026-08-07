@@ -99,9 +99,12 @@ services:
       UVICORN_WORKERS: ${UVICORN_WORKERS:-4}
       SERVER_URL: ${SERVER_URL:-}
       UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+      PRIVATE_UPLOAD_DIR: ${PRIVATE_UPLOAD_DIR:-/app/private_uploads}
+      LOCAL_FILE_STORAGE_ROOT: ${LOCAL_FILE_STORAGE_ROOT:-/app/private_uploads/file_storage}
       UPLOAD_MAX_SIZE: ${UPLOAD_MAX_SIZE:-10485760}
     volumes:
       - ./uploads:/app/uploads
+      - ./private_uploads:/app/private_uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -146,6 +149,11 @@ services:
       WORKER_ID: ${WORKER_ID:-1}
       SERVER_URL: ${SERVER_URL:-}
       UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+      PRIVATE_UPLOAD_DIR: ${PRIVATE_UPLOAD_DIR:-/app/private_uploads}
+      LOCAL_FILE_STORAGE_ROOT: ${LOCAL_FILE_STORAGE_ROOT:-/app/private_uploads/file_storage}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./private_uploads:/app/private_uploads
     depends_on:
       postgres:
         condition: service_healthy

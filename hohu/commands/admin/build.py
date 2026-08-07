@@ -12,7 +12,11 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from hohu.commands.admin.deploy import _generate_secrets, _sync_templates
+from hohu.commands.admin.deploy import (
+    _ensure_storage_dirs,
+    _generate_secrets,
+    _sync_templates,
+)
 from hohu.i18n import i18n
 from hohu.utils.process import run_command, run_command_silent
 from hohu.utils.project import ProjectManager
@@ -180,6 +184,7 @@ def _ensure_deploy_dir(project_root: Path) -> Path:
 
         console.print(f"[green]{i18n.t('deploy_init_success')}[/green]")
         console.print(i18n.t("deploy_init_hint").format(env_file))
+    _ensure_storage_dirs(deploy_dir)
     return deploy_dir
 
 

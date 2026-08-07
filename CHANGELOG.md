@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.15
+
+### Security
+
+- **Private artifact edge deny** — Return 404 for legacy `/uploads/file_storage/**` and public `.csv/.txt/.xls/.xlsx` requests in built-in, SSL, and external Nginx templates
+- **Private storage persistence** — Mount a shared `private_uploads` volume into API and Scheduler containers so import/export artifacts survive container recreation and cleanup sees the same files
+
+### Deployment
+
+- **Storage directory initialization** — Create both public and private bind-mount roots during build/deploy initialization
+- **Template upgrade** — Bump the deployment template version so existing `.hohu/deploy` installations are prompted to receive the security update
+
 ## v0.1.13
 
 ### Features
