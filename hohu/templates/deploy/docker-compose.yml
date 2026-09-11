@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-hohu}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hohu_secret_6789}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${POSTGRES_DB:-hohu_admin}
     volumes:
       - pgdata:/var/lib/postgresql
@@ -29,12 +29,12 @@ services:
     restart: unless-stopped
     command: >
       redis-server
-      --requirepass ${REDIS_PASSWORD:-hohu_redis_6789}
+      --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       --appendonly yes
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-hohu_redis_6789}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -50,8 +50,8 @@ services:
     env_file: .env
     environment:
       ENV: prod
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hohu}:${POSTGRES_PASSWORD:-hohu_secret_6789}@postgres:5432/${POSTGRES_DB:-hohu_admin}
-      SECRET_KEY: ${SECRET_KEY:-change_me_in_production}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hohu}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-hohu_admin}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
     depends_on:
       postgres:
         condition: service_healthy
@@ -87,16 +87,16 @@ services:
       ENV: prod
       # 仅承担 FastAPI，调度器由独立的 hohu-admin-scheduler 服务运行
       APP_ROLE: api
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hohu}:${POSTGRES_PASSWORD:-hohu_secret_6789}@postgres:5432/${POSTGRES_DB:-hohu_admin}
-      SECRET_KEY: ${SECRET_KEY:-change_me_in_production}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hohu}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-hohu_admin}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       ALGORITHM: HS256
-      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-10080}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-hohu_redis_6789}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       REDIS_DB: 0
-      WORKER_ID: ${WORKER_ID:-1}
-      UVICORN_WORKERS: ${UVICORN_WORKERS:-4}
+      WORKER_ID: ${API_WORKER_ID:-1}
+      UVICORN_WORKERS: 1
       SERVER_URL: ${SERVER_URL:-}
       UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
       PRIVATE_UPLOAD_DIR: ${PRIVATE_UPLOAD_DIR:-/app/private_uploads}
@@ -140,13 +140,13 @@ services:
     environment:
       ENV: prod
       APP_ROLE: scheduler
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hohu}:${POSTGRES_PASSWORD:-hohu_secret_6789}@postgres:5432/${POSTGRES_DB:-hohu_admin}
-      SECRET_KEY: ${SECRET_KEY:-change_me_in_production}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-hohu}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-hohu_admin}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-hohu_redis_6789}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       REDIS_DB: 0
-      WORKER_ID: ${WORKER_ID:-1}
+      WORKER_ID: ${SCHEDULER_WORKER_ID:-2}
       SERVER_URL: ${SERVER_URL:-}
       UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
       PRIVATE_UPLOAD_DIR: ${PRIVATE_UPLOAD_DIR:-/app/private_uploads}
@@ -277,7 +277,7 @@ services:
     container_name: hohu-grafana
     restart: unless-stopped
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
