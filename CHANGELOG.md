@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Licensing
+
+- Adopt Apache-2.0 for the current development tree, except where otherwise noted; keep the current version number unchanged.
+- Versions through v0.1.15 were previously released under the MIT license; that grant remains effective for copies already distributed. Existing third-party notices are retained.
+- Include license notices with distributions; this entry does not announce a release.
+
+
 ## v0.1.15
 
 ### Security

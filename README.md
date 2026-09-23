@@ -6,7 +6,7 @@ A modern full-stack development toolkit for the **hohu-admin** ecosystem.
 
 [![PyPI version](https://img.shields.io/pypi/v/hohu?color=blue&label=pypi)](https://pypi.org/project/hohu/)
 [![Python](https://img.shields.io/pypi/pyversions/hohu?label=python)](https://pypi.org/project/hohu/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![GitHub Issues](https://img.shields.io/github/issues/aihohu/hohu-cli)](https://github.com/aihohu/hohu-cli/issues)
 
 [English](README.md) · [中文](README_zh.md)
@@ -262,7 +262,3 @@ Issues and Pull Requests are welcome!
 3. Commit your changes: `git commit -m 'Add my-feature'`
 4. Push: `git push origin feature/my-feature`
 5. Open a Pull Request
-
-## License
-
-[MIT](LICENSE)

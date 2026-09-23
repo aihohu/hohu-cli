@@ -1,0 +1,12 @@
+hohu-cli
+Copyright (c) 2025-2026 HoHu
+
+The current development tree is licensed under Apache License 2.0,
+except where otherwise noted. See LICENSE for the complete terms.
+This change does not bump the project version or constitute a release.
+
+Versions through v0.1.15 were previously released under the MIT license.
+That grant remains effective for copies already distributed and is not
+revoked by this transition.
+
+Third-party components retain their own licenses and copyright notices.

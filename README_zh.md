@@ -6,7 +6,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/hohu?color=blue&label=pypi)](https://pypi.org/project/hohu/)
 [![Python](https://img.shields.io/pypi/pyversions/hohu?label=python)](https://pypi.org/project/hohu/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![GitHub Issues](https://img.shields.io/github/issues/aihohu/hohu-cli)](https://github.com/aihohu/hohu-cli/issues)
 
 [English](README.md) · [中文](README_zh.md)
@@ -265,4 +265,4 @@ ssl/
 
 ## 开源协议
 
-[MIT](LICENSE)
+本项目当前开发版本默认采用 [Apache License 2.0](./LICENSE)，另有声明的代码除外。本次切换不增加版本号，也不表示已经发布。v0.1.15 及之前的版本曾以 MIT 发布，该授权对已分发副本继续有效；第三方代码保留各自许可和版权声明。详见 [NOTICE](./NOTICE)。

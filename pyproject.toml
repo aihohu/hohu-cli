@@ -4,7 +4,8 @@ version = "0.1.15"
 description = "A full-stack project management CLI tool for Hohu Admin ecosystem."
 readme = "README.md"
 requires-python = ">=3.10"
-license = {file = "LICENSE"}
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 authors = [
     {name = "hohu", email = "hohu@hohu.org"},
 ]
@@ -17,7 +18,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Utilities",
     "Environment :: Console",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
@@ -51,7 +51,7 @@ packages = ["hohu"]
 artifacts = ["hohu/locales/*.json", "hohu/templates/**/*"]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27.0"]
 build-backend = "hatchling.build"
 
 
