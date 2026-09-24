@@ -21,13 +21,25 @@ TEMPLATES_DIR = Path(__file__).parent.parent.parent / "templates" / "deploy"
 # .env 中需要自动生成的密钥字段
 # SECRET_KEY 用 hex，密码用字母数字混合
 SECRET_FIELDS = {"SECRET_KEY": 32}
-PASSWORD_FIELDS = {"POSTGRES_PASSWORD", "REDIS_PASSWORD", "GRAFANA_ADMIN_PASSWORD"}
+PASSWORD_FIELDS = {
+    "POSTGRES_PASSWORD",
+    "REDIS_PASSWORD",
+    "GRAFANA_ADMIN_PASSWORD",
+    "HOHU_ADMIN_PASSWORD",
+}
 _PASSWORD_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 
 def _generate_password(length: int = 16) -> str:
     """生成随机字母数字密码"""
-    return "".join(secrets.choice(_PASSWORD_CHARS) for _ in range(length))
+    while True:
+        password = "".join(secrets.choice(_PASSWORD_CHARS) for _ in range(length))
+        if (
+            any(c.islower() for c in password)
+            and any(c.isupper() for c in password)
+            and any(c.isdigit() for c in password)
+        ):
+            return password
 
 
 def _generate_secrets(env_file: Path) -> None:
@@ -543,7 +555,6 @@ def _start_infra(
 @deploy_app.callback(invoke_without_command=True)
 def deploy(
     ctx: typer.Context,
-    init: bool = typer.Option(False, "--init", help=i18n.t("deploy_init_flag_help")),
     no_migrate: bool = typer.Option(
         False, "--no-migrate", help=i18n.t("deploy_no_migrate_help")
     ),
@@ -564,11 +575,10 @@ def deploy(
     _pull_images(cmd, deploy_dir, pg_enabled, redis_enabled)
     _start_infra(cmd, deploy_dir, pg_enabled, redis_enabled)
 
-    # Step 4: Migrate (+ init if --init specified)
-    if not no_migrate or init:
+    # Step 4: Migrate and synchronize deployment data
+    if not no_migrate:
         console.print(f"[bold cyan]{i18n.t('deploy_migrating')}[/bold cyan]")
-        env_flag = ["-e", "RUN_INIT=1"] if init else []
-        run_command(cmd + ["run", "--rm", *env_flag, "db-migrator"], cwd=deploy_dir)
+        run_command(cmd + ["run", "--rm", "db-migrator"], cwd=deploy_dir)
 
     # Step 5: Start all
     console.print(f"[bold cyan]{i18n.t('deploy_starting_all')}[/bold cyan]")
@@ -629,7 +639,7 @@ def deploy_ps():
 
 @deploy_app.command(name="pull")
 def deploy_pull():
-    """Pull latest images and restart"""
+    """Pull images, migrate and synchronize data before restarting."""
     _ensure_docker()
     deploy_dir = _ensure_deploy_dir()
     _ensure_env(deploy_dir)
@@ -639,6 +649,9 @@ def deploy_pull():
     redis_enabled = _is_redis_enabled(deploy_dir)
 
     _pull_images(cmd, deploy_dir, pg_enabled, redis_enabled)
+    _start_infra(cmd, deploy_dir, pg_enabled, redis_enabled)
+    console.print(f"[bold cyan]{i18n.t('deploy_migrating')}[/bold cyan]")
+    run_command(cmd + ["run", "--rm", "db-migrator"], cwd=deploy_dir)
 
     console.print(f"[bold cyan]{i18n.t('deploy_restarting')}[/bold cyan]")
     if _is_nginx_enabled(deploy_dir):
@@ -676,7 +689,6 @@ def deploy_upgrade(
     no_migrate: bool = typer.Option(
         False, "--no-migrate", help=i18n.t("deploy_no_migrate_help")
     ),
-    init: bool = typer.Option(False, "--init", help=i18n.t("deploy_init_flag_help")),
 ):
     """Full upgrade: git pull → build → down → deploy"""
     from hohu.commands.admin.build import (
@@ -715,10 +727,9 @@ def deploy_upgrade(
     _pull_images(cmd, deploy_dir, pg_enabled, redis_enabled)
     _start_infra(cmd, deploy_dir, pg_enabled, redis_enabled)
 
-    if not no_migrate or init:
+    if not no_migrate:
         console.print(f"[bold cyan]{i18n.t('deploy_migrating')}[/bold cyan]")
-        env_flag = ["-e", "RUN_INIT=1"] if init else []
-        run_command(cmd + ["run", "--rm", *env_flag, "db-migrator"], cwd=deploy_dir)
+        run_command(cmd + ["run", "--rm", "db-migrator"], cwd=deploy_dir)
 
     console.print(f"[bold cyan]{i18n.t('deploy_starting_all')}[/bold cyan]")
     if _is_nginx_enabled(deploy_dir):

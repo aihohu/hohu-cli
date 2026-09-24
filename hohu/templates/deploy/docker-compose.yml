@@ -59,16 +59,11 @@ services:
     entrypoint: ["sh", "-c"]
     command:
       - |
+        set -eu
         echo "Running database migrations..."
         alembic upgrade head
-        if [ "$$RUN_INIT" = "1" ]; then
-          echo "Initializing database..."
-          python scripts/init_db.py
-        fi
-        echo "Syncing menus..."
-        python scripts/sync_menus.py
-        echo "Seeding system configs..."
-        python scripts/seed_config.py
+        echo "Synchronizing deployment data..."
+        python -m scripts.init_db
         echo "Done."
     profiles:
       - migrate

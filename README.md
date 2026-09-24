@@ -175,17 +175,22 @@ hohu deploy ps       # Show service status
 hohu deploy logs     # View logs (-f to follow)
 hohu deploy restart  # Restart services
 hohu deploy down     # Stop all services
-hohu migrate         # Run database migrations only
+hohu migrate         # Run database migrations and synchronize built-in data
 ```
 
 ### Deploy Options
 
 ```bash
-hohu deploy --init          # Also seed database (create admin user and menus)
-hohu deploy --no-migrate    # Skip database migrations
+hohu deploy                 # Migrate and initialize/synchronize data automatically
+hohu deploy --no-migrate    # Skip migrations and data synchronization
 ```
 
 ### External PostgreSQL / Redis
+
+The initial `admin` password is generated in `.hohu/deploy/.env` as
+`HOHU_ADMIN_PASSWORD`. It is never printed or reset by subsequent deployments.
+Core multi-tenant deployments use `TENANT_MODE=hosted`,
+`TENANT_HOSTED_LOGIN_ENABLED=true`, and the full backend `RELEASE_BUILD_SHA`.
 
 By default, PostgreSQL and Redis run as Docker containers. To use your own instances, edit `.hohu/deploy/.env`:
 
