@@ -1,3 +1,4 @@
+import re
 import secrets
 import shutil
 import subprocess
@@ -268,7 +269,46 @@ def _ensure_env(deploy_dir: Path) -> Path:
         else:
             console.print(f"[red]{i18n.t('deploy_no_env_example')}[/red]")
             raise typer.Exit(1)
+    _configure_upload_limits(deploy_dir)
     return env_file
+
+
+def _configure_upload_limits(deploy_dir: Path) -> None:
+    """Derive the proxy body ceiling from the deployment file ceiling."""
+    raw = _read_env_value(deploy_dir, "UPLOAD_HARD_MAX_BYTES", "104857600")
+    try:
+        file_limit = int(raw)
+        if not 1024 <= file_limit <= 1073741824:
+            raise ValueError
+    except ValueError as exc:
+        console.print(i18n.t("deploy_upload_limit_invalid"))
+        raise typer.Exit(1) from exc
+    request_limit = file_limit + 1048576
+    path = deploy_dir / ".env"
+    content = path.read_text(encoding="utf-8")
+    lines = [
+        line
+        for line in content.splitlines()
+        if not line.startswith("UPLOAD_REQUEST_MAX_BYTES=")
+    ]
+    path.write_text(
+        "\n".join(lines) + f"\nUPLOAD_REQUEST_MAX_BYTES={request_limit}\n",
+        encoding="utf-8",
+    )
+    source = TEMPLATES_DIR / "nginx" / "proxy-snippet.conf"
+    target = deploy_dir / "nginx" / "proxy-snippet.conf"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    snippet = (
+        target.read_text(encoding="utf-8")
+        if target.exists()
+        else source.read_text(encoding="utf-8")
+    )
+    snippet = re.sub(
+        r"client_max_body_size\s+[^;]+;",
+        f"client_max_body_size {request_limit};",
+        snippet,
+    )
+    target.write_text(snippet, encoding="utf-8")
 
 
 def _compose_cmd(deploy_dir: Path) -> list[str]:

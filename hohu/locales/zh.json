@@ -116,5 +116,6 @@
   "monitoring_up_starting": "正在启动监控栈...",
   "monitoring_up_success": "监控栈已启动（Prometheus :9090 + Grafana :3000）",
   "monitoring_down_success": "监控栈已停止",
-  "monitoring_restarted": "监控栈已重启"
+  "monitoring_restarted": "监控栈已重启",
+  "deploy_upload_limit_invalid": "UPLOAD_HARD_MAX_BYTES 必须是 1024 到 1073741824 之间的整数。"
 }

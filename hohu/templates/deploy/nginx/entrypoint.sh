@@ -16,4 +16,9 @@ else
     cp /etc/nginx/custom/nginx.conf /etc/nginx/nginx.conf
 fi
 
+UPLOAD_REQUEST_MAX_BYTES=${UPLOAD_REQUEST_MAX_BYTES:-105906176}
+case "$UPLOAD_REQUEST_MAX_BYTES" in ''|*[!0-9]*) exit 1;; esac
+export UPLOAD_REQUEST_MAX_BYTES
+envsubst '${UPLOAD_REQUEST_MAX_BYTES}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
+mv /etc/nginx/nginx.conf.tmp /etc/nginx/nginx.conf
 exec nginx -g 'daemon off;'

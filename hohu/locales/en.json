@@ -116,5 +116,6 @@
   "monitoring_up_starting": "Starting monitoring stack...",
   "monitoring_up_success": "Monitoring stack started (Prometheus :9090 + Grafana :3000)",
   "monitoring_down_success": "Monitoring stack stopped",
-  "monitoring_restarted": "Monitoring stack restarted"
+  "monitoring_restarted": "Monitoring stack restarted",
+  "deploy_upload_limit_invalid": "UPLOAD_HARD_MAX_BYTES must be an integer between 1024 and 1073741824."
 }

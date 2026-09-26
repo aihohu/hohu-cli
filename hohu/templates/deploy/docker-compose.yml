@@ -92,11 +92,12 @@ services:
       REDIS_DB: 0
       WORKER_ID: ${API_WORKER_ID:-1}
       UVICORN_WORKERS: 1
+      DEFAULT_LOCALE: ${DEFAULT_LOCALE:-zh-CN}
       SERVER_URL: ${SERVER_URL:-}
       UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
       PRIVATE_UPLOAD_DIR: ${PRIVATE_UPLOAD_DIR:-/app/private_uploads}
       LOCAL_FILE_STORAGE_ROOT: ${LOCAL_FILE_STORAGE_ROOT:-/app/private_uploads/file_storage}
-      UPLOAD_MAX_SIZE: ${UPLOAD_MAX_SIZE:-10485760}
+      UPLOAD_HARD_MAX_BYTES: ${UPLOAD_HARD_MAX_BYTES:-104857600}
     volumes:
       - ./uploads:/app/uploads
       - ./private_uploads:/app/private_uploads
@@ -142,10 +143,12 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
       REDIS_DB: 0
       WORKER_ID: ${SCHEDULER_WORKER_ID:-2}
+      DEFAULT_LOCALE: ${DEFAULT_LOCALE:-zh-CN}
       SERVER_URL: ${SERVER_URL:-}
       UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
       PRIVATE_UPLOAD_DIR: ${PRIVATE_UPLOAD_DIR:-/app/private_uploads}
       LOCAL_FILE_STORAGE_ROOT: ${LOCAL_FILE_STORAGE_ROOT:-/app/private_uploads/file_storage}
+      UPLOAD_HARD_MAX_BYTES: ${UPLOAD_HARD_MAX_BYTES:-104857600}
     volumes:
       - ./uploads:/app/uploads
       - ./private_uploads:/app/private_uploads
@@ -170,6 +173,7 @@ services:
     restart: unless-stopped
     environment:
       API_URL: http://hohu-admin-api:8000/
+      UPLOAD_REQUEST_MAX_BYTES: ${UPLOAD_REQUEST_MAX_BYTES:-105906176}
     depends_on:
       hohu-admin-api:
         condition: service_healthy
@@ -201,6 +205,7 @@ services:
       - "${HTTPS_PORT:-443}:443"
     environment:
       ENABLE_SSL: ${ENABLE_SSL:-false}
+      UPLOAD_REQUEST_MAX_BYTES: ${UPLOAD_REQUEST_MAX_BYTES:-105906176}
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/custom/nginx.conf:ro
       - ./nginx/nginx-ssl.conf:/etc/nginx/custom/nginx-ssl.conf:ro
