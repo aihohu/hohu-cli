@@ -9,6 +9,7 @@ from hohu.commands.admin.dev import dev
 from hohu.commands.admin.init import init
 from hohu.commands.admin.migrate import migrate
 from hohu.commands.admin.monitoring import monitoring_app
+from hohu.commands.skills import skills_app
 from hohu.commands.system import set_language, show_info, system_app
 from hohu.i18n import i18n
 
@@ -18,11 +19,9 @@ console = Console()
 
 def version_callback(value: bool):
     if value:
-        from rich.console import Console
-
         console = Console()
         console.print(
-            f"🚀 [bold cyan]HoHu CLI[/bold cyan] Version: [green]{__version__}[/green]"
+            f"[bold cyan]HoHu CLI[/bold cyan] Version: [green]{__version__}[/green]"
         )
         raise typer.Exit()
 
@@ -50,6 +49,7 @@ app.command(name="migrate", help=i18n.t("migrate_help"))(migrate)
 app.add_typer(deploy_app, name="deploy")
 app.add_typer(monitoring_app, name="monitoring")
 app.add_typer(system_app, name="system")
+app.add_typer(skills_app, name="skills")
 
 app.command(name="lang", help=i18n.t("system_lang_help"))(set_language)
 app.command(name="info", help=i18n.t("system_info_help"))(show_info)

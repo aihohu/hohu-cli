@@ -1,4 +1,10 @@
 {
+  "create_component_help": "选择组件：backend、frontend/web、app（可重复）。",
+  "create_non_interactive_help": "要求显式指定组件，跳过组件选择提示。",
+  "create_invalid_component": "未知组件，请选择 backend、frontend/web 或 app。",
+  "create_components_required": "--non-interactive 至少需要一个 --component。",
+  "create_invalid_name": "项目名必须是当前目录下的单个文件夹名。",
+  "create_exists": "项目路径已存在：{name}",
   "cli_help": "HoHu CLI 工具",
   "cli_desc": "HoHu 全能开发管理工具",
   "version_help": "显示版本号",
@@ -117,5 +123,19 @@
   "monitoring_up_success": "监控栈已启动（Prometheus :9090 + Grafana :3000）",
   "monitoring_down_success": "监控栈已停止",
   "monitoring_restarted": "监控栈已重启",
-  "deploy_upload_limit_invalid": "UPLOAD_HARD_MAX_BYTES 必须是 1024 到 1073741824 之间的整数。"
+  "deploy_upload_limit_invalid": "UPLOAD_HARD_MAX_BYTES 必须是 1024 到 1073741824 之间的整数。",
+  "skills_help": "为 AI Agent 安装 HoHu 编程 Skills",
+  "skills_install_help": "通过上游 skills CLI 安装官方 HoHu Skills",
+  "skills_agent_help": "目标 Agent 标识，可重复；例如 codex、claude-code、cursor、opencode、trae、trae-cn",
+  "skills_global_help": "安装到用户范围，而非项目范围",
+  "skills_yes_help": "确认 npm 下载和 Skill 安装；需指定 --agent",
+  "skills_missing": "缺少 {command}。请安装带 npm 的 Node.js >=22.20.0：https://nodejs.org/",
+  "skills_node_version": "Skills 安装要求稳定版 Node.js >=22.20.0。升级地址：https://nodejs.org/",
+  "skills_npx_entry": "无法找到 npm/bin/npx-cli.js。请使用标准 Node.js/npm 安装，或在终端执行 npx skills@1.7.0 add aihohu/hohu-skills。",
+  "skills_invalid_agent": "Agent 标识仅允许小写字母、数字和连字符，并以字母开头。",
+  "skills_yes_agent": "使用 --yes 时至少指定一个 --agent。",
+  "skills_directory": "当前工作目录：{path}",
+  "skills_launch": "调用 {installer}，来源为 {source}。请按提示选择范围，并查看安装器返回的结果。",
+  "skills_cancelled": "Skills 安装已中断。",
+  "skills_launch_error": "无法运行 Skills 安装器：{error}"
 }

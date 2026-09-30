@@ -75,6 +75,14 @@ pip install --upgrade hohu
 hohu create my-project
 ```
 
+For agents or scripts, select components without interactive prompts:
+
+```bash
+hohu create my-project --component backend --component web --non-interactive
+```
+
+See [project creation](docs/PROJECT-CREATION.md) for component aliases, failure handling and initialization boundaries.
+
 Confirm each component (Backend / Frontend / App) interactively. Defaults to `hohu-admin` if no name is given.
 
 ### Install Dependencies
@@ -90,6 +98,17 @@ Automatically detects project config and installs all dependencies.
 > 1. Enable **Developer Mode** in Windows Settings: **Settings → Update & Security → For developers → Developer Mode**. This allows symlink creation without admin privileges.
 > 2. Run your terminal as Administrator.
 > 3. Check your antivirus software (e.g., 360, Huorong) — some may block symlink creation. Try adding the project directory to the exclusion list or temporarily disabling real-time protection.
+
+### Install AI Coding Skills
+
+From your business project directory, use either entry point:
+
+```bash
+hohu skills install
+npx skills@latest add aihohu/hohu-skills
+```
+
+The HoHu command uses `skills@1.7.0` and requires stable Node.js >=22.20.0 with npm/npx. Select Claude Code, Cursor, Codex, OpenCode, TRAE or another upstream-supported agent. Use repeated `--agent` flags for explicit targets. See the [installation guide](https://hohu.org/guide/cli/skills) and [contributor contract](docs/SKILLS-INSTALLATION.md).
 
 ### Switch Language
 

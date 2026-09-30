@@ -30,3 +30,12 @@ jobs:
 
       - name: Check Formatting
         run: uv run ruff format --check .
+
+      - name: Test CLI and Skills installer boundary
+        env:
+          COVERAGE_FILE: ${{ github.workspace }}/.local/reports/.coverage
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          mkdir -p .local/tests .local/reports
+          uv run --with coverage==7.16.2 coverage run --source=hohu.commands.skills,hohu.commands.admin.create -m pytest --basetemp "$PWD/.local/tests/pytest" -o cache_dir="$PWD/.local/cache/pytest"
+          uv run --with coverage==7.16.2 coverage report --fail-under=70

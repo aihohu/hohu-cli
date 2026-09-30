@@ -75,6 +75,14 @@ pip install --upgrade hohu
 hohu create my-project
 ```
 
+Agent 或脚本可显式选择组件，跳过交互提示：
+
+```bash
+hohu create my-project --component backend --component web --non-interactive
+```
+
+组件别名、失败处理及初始化边界见[项目创建命令](docs/PROJECT-CREATION.md)。
+
 逐步确认每个组件（后端 / 前端 / App）。不提供名称时默认为 `hohu-admin`。
 
 ### 安装依赖
@@ -90,6 +98,17 @@ hohu init
 > 1. 在 Windows 设置中开启**开发者模式**：**设置 → 更新和安全 → 开发者选项 → 开启"开发人员模式"**。这允许普通用户创建符号链接。
 > 2. 以管理员身份运行终端。
 > 3. 检查杀毒软件（如 360、火绒等）——部分杀软会拦截符号链接创建。可将项目目录加入白名单，或暂时关闭实时防护后重试。
+
+### 安装 AI 编程 Skills
+
+在业务项目目录选择一种入口：
+
+```bash
+hohu skills install
+npx skills@latest add aihohu/hohu-skills
+```
+
+HoHu 命令使用 `skills@1.7.0`，需要带 npm/npx 的稳定版 Node.js >=22.20.0。可选择 Claude Code、Cursor、Codex、OpenCode、TRAE 等上游支持的 Agent，也可重复传入 `--agent` 指定目标。详见[安装指南](https://hohu.org/zh/guide/cli/skills)和[贡献者契约](docs/SKILLS-INSTALLATION.md)。
 
 ### 切换语言
 

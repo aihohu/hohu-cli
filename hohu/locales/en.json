@@ -1,4 +1,10 @@
 {
+  "create_component_help": "Component to include: backend, frontend/web, app (repeatable).",
+  "create_non_interactive_help": "Require explicit components and skip component prompts.",
+  "create_invalid_component": "Unknown component. Choose backend, frontend/web, or app.",
+  "create_components_required": "--non-interactive requires at least one --component.",
+  "create_invalid_name": "Project name must be a single folder name in the current directory.",
+  "create_exists": "Project path already exists: {name}",
   "cli_help": "HoHu CLI Tool",
   "cli_desc": "HoHu full-stack development management tool",
   "version_help": "Show version",
@@ -117,5 +123,19 @@
   "monitoring_up_success": "Monitoring stack started (Prometheus :9090 + Grafana :3000)",
   "monitoring_down_success": "Monitoring stack stopped",
   "monitoring_restarted": "Monitoring stack restarted",
-  "deploy_upload_limit_invalid": "UPLOAD_HARD_MAX_BYTES must be an integer between 1024 and 1073741824."
+  "deploy_upload_limit_invalid": "UPLOAD_HARD_MAX_BYTES must be an integer between 1024 and 1073741824.",
+  "skills_help": "Install HoHu coding skills for AI agents",
+  "skills_install_help": "Install official HoHu skills using the upstream skills CLI",
+  "skills_agent_help": "Target agent ID (repeatable), e.g. codex, claude-code, cursor, opencode, trae, trae-cn",
+  "skills_global_help": "Install at user scope instead of project scope",
+  "skills_yes_help": "Confirm npm download and skill installation; requires --agent",
+  "skills_missing": "Missing {command}. Install Node.js >=22.20.0 with npm: https://nodejs.org/",
+  "skills_node_version": "Skills installation requires stable Node.js >=22.20.0. Upgrade at https://nodejs.org/",
+  "skills_npx_entry": "Cannot locate npm/bin/npx-cli.js. Use a standard Node.js/npm installation, or run npx skills@1.7.0 add aihohu/hohu-skills in your terminal.",
+  "skills_invalid_agent": "Use an agent ID containing lowercase letters, digits and hyphens.",
+  "skills_yes_agent": "Specify at least one --agent when using --yes.",
+  "skills_directory": "Working directory: {path}",
+  "skills_launch": "Running {installer} with {source}. Follow its prompts for scope and installation results.",
+  "skills_cancelled": "Skills installation interrupted.",
+  "skills_launch_error": "Unable to run the skills installer: {error}"
 }

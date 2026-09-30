@@ -44,29 +44,56 @@ def get_custom_repo(
     return get_component_repo(component)
 
 
-def create(
-    project_name: str = typer.Argument("hohu-admin"),
-    repo: str = typer.Option(None, "--repo", "-r", help=i18n.t("repo_help")),
-):
-    """create"""
-    root = Path.cwd() / project_name
-    if root.exists():
-        console.print(f"[red]Error: {project_name} already exists.[/red]")
-        return
-
+def select_components(component: list[str] | None, non_interactive: bool) -> list[str]:
+    """Resolve explicit components or retain the interactive selection flow."""
+    if component:
+        aliases = {name.lower(): name for name in COMPONENT_CONFIG}
+        aliases["web"] = "Frontend"
+        if any(name.lower() not in aliases for name in component):
+            raise typer.BadParameter(i18n.t("create_invalid_component"))
+        selected = {aliases[name.lower()] for name in component}
+        return [name for name in COMPONENT_CONFIG if name in selected]
+    if non_interactive:
+        raise typer.BadParameter(i18n.t("create_components_required"))
     console.print(f"\n[bold]{i18n.t('component_setup_hint')}[/bold]\n")
     choices = []
     for name, cfg in COMPONENT_CONFIG.items():
         label = f"{name}（{cfg['folder']}）"
         result = questionary.confirm(
-            f"  {i18n.t('include_component', component=label)}",
-            default=True,
+            f"  {i18n.t('include_component', component=label)}", default=True
         ).ask()
+        if result is None:
+            raise typer.Exit(130)
         if result:
             choices.append(name)
-
     if not choices:
-        return
+        raise typer.Exit(1)
+    return choices
+
+
+def create(
+    project_name: str = typer.Argument("hohu-admin"),
+    repo: str = typer.Option(None, "--repo", "-r", help=i18n.t("repo_help")),
+    component: list[str] | None = typer.Option(
+        None, "--component", "-c", help=i18n.t("create_component_help")
+    ),
+    non_interactive: bool = typer.Option(
+        False, "--non-interactive", help=i18n.t("create_non_interactive_help")
+    ),
+):
+    """Clone the selected components without overwriting existing projects."""
+    if (
+        not project_name.strip()
+        or project_name in {".", ".."}
+        or any(char in project_name for char in "/\\:")
+        or Path(project_name).is_absolute()
+    ):
+        raise typer.BadParameter(i18n.t("create_invalid_name"))
+    root = Path.cwd() / project_name
+    if root.exists():
+        console.print(i18n.t("create_exists", name=project_name), markup=False)
+        raise typer.Exit(1)
+    choices = select_components(component, non_interactive)
 
     try:
         root.mkdir(parents=True)
