@@ -12,7 +12,9 @@ from hohu.commands.admin.monitoring import monitoring_app
 from hohu.commands.skills import skills_app
 from hohu.commands.system import set_language, show_info, system_app
 from hohu.i18n import i18n
+from hohu.utils.console import configure_output_streams
 
+configure_output_streams()
 app = typer.Typer(name="hohu", help=i18n.t("cli_help"), no_args_is_help=True)
 console = Console()
 

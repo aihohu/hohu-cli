@@ -12,9 +12,14 @@ hohu create equipment --component backend --component web --non-interactive
 
 失败时保留已经克隆的文件供检查，不自动删除项目或覆盖重试；处理部分创建时先核对 `.hohu/project.json` 与实际组件。
 
+Windows 的 GBK/cp936 输出环境下，CLI 保留原编码，将无法显示的 emoji 等字符输出为 Unicode 转义，避免提示文字中断创建。UTF-8 终端仍正常显示 emoji，无需为此修改系统编码。
+
+旧版本遇到 `UnicodeEncodeError` 时，可在 PowerShell 当前会话执行 `$env:PYTHONUTF8 = "1"` 后重新运行 CLI。如果会话显式设置了 `PYTHONIOENCODING`，该变量会覆盖 UTF-8 模式的标准流编码。重试前检查失败目录；即使克隆尚未开始，也可能已生成项目标记，应使用新的项目名或确认目录内容后处理。
+
 ## 决策
 
 1. **显式组件即可非交互** — Agent 无需操作终端选择器，也不改变人工默认行为。**反例**: 在 Skill monkeypatch questionary。**回归**: tests/test_create.py。
 2. **拒绝覆盖** — 重试不会破坏已有目录。**反例**: 克隆失败后自动删除用户文件。**回归**: 已有目录与克隆失败保留测试。
+3. **保留输出编码并容错** — 兼容 GBK 终端和重定向消费者，不依赖调用方设置 UTF-8。**反例**: 强制 UTF-8 导致 GBK 消费方乱码，或 emoji 在克隆前触发异常。**回归**: tests/test_main.py、tests/test_console.py。
 
 创建行为测试见 [test_create.py](../tests/test_create.py)。命令回归与本地仓库克隆验证不能替代远程网络、依赖初始化或完整应用验收。
