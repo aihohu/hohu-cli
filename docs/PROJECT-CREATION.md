@@ -12,7 +12,7 @@ hohu create equipment --component backend --component web --non-interactive
 
 失败时保留已经克隆的文件供检查，不自动删除项目或覆盖重试；处理部分创建时先核对 `.hohu/project.json` 与实际组件。
 
-Windows 的 GBK/cp936 输出环境下，CLI 保留原编码，将无法显示的 emoji 等字符输出为 Unicode 转义，避免提示文字中断创建。UTF-8 终端仍正常显示 emoji，无需为此修改系统编码。
+Windows 下通过 Agent、管道或文件捕获输出时，标准流可能使用 GBK/cp936；直接连接 Windows 控制台通常使用 UTF-8。对于 GBK 等非 UTF-8 输出流，CLI 将 strict、surrogateescape、surrogatepass 改为 backslashreplace，保留原编码，将无法表示的 emoji 等字符输出为 Unicode 转义，避免提示文字中断创建。UTF-8 输出及 replace、ignore 等可处理不可编码字符的模式保持原样，无需为此修改系统编码。
 
 旧版本遇到 `UnicodeEncodeError` 时，可在 PowerShell 当前会话执行 `$env:PYTHONUTF8 = "1"` 后重新运行 CLI。如果会话显式设置了 `PYTHONIOENCODING`，该变量会覆盖 UTF-8 模式的标准流编码。重试前检查失败目录；即使克隆尚未开始，也可能已生成项目标记，应使用新的项目名或确认目录内容后处理。
 

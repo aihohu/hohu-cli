@@ -1,13 +1,16 @@
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
 
 @pytest.mark.parametrize("encoding", ["cp936", "utf-8"])
+@pytest.mark.parametrize("errors", ["strict", "surrogateescape"])
+@pytest.mark.parametrize("entry", ["module", "launcher"])
 @pytest.mark.parametrize("valid_repo", [True, False])
-def test_create_with_encoded_output(tmp_path, encoding, valid_repo):
+def test_create_with_encoded_output(tmp_path, encoding, errors, entry, valid_repo):
     source = tmp_path / "source"
     if valid_repo:
         subprocess.run(["git", "init", str(source)], check=True, capture_output=True)
@@ -33,12 +36,18 @@ def test_create_with_encoded_output(tmp_path, encoding, valid_repo):
         )
     env = os.environ.copy()
     env["PYTHONUTF8"] = "0"
-    env["PYTHONIOENCODING"] = f"{encoding}:strict"
+    env["PYTHONIOENCODING"] = f"{encoding}:{errors}"
+    if entry == "launcher":
+        launcher = Path(sys.executable).parent / (
+            "hohu.exe" if sys.platform == "win32" else "hohu"
+        )
+        assert launcher.is_file(), "Install the CLI in the test environment"
+        command = [str(launcher)]
+    else:
+        command = [sys.executable, "-m", "hohu.main"]
     result = subprocess.run(
         [
-            sys.executable,
-            "-m",
-            "hohu.main",
+            *command,
             "create",
             "demo",
             "--component",

@@ -8,7 +8,18 @@ from hohu.utils.console import configure_output_streams
 
 
 @pytest.mark.parametrize("encoding", ["cp936", "utf-8"])
-@pytest.mark.parametrize("errors", ["strict", "replace"])
+@pytest.mark.parametrize(
+    "errors",
+    [
+        "strict",
+        "surrogateescape",
+        "surrogatepass",
+        "replace",
+        "ignore",
+        "backslashreplace",
+        "xmlcharrefreplace",
+    ],
+)
 def test_preserve_encoding_and_explicit_error_policy(monkeypatch, encoding, errors):
     buffer = io.BytesIO()
     stream = io.TextIOWrapper(buffer, encoding=encoding, errors=errors)
@@ -18,7 +29,10 @@ def test_preserve_encoding_and_explicit_error_policy(monkeypatch, encoding, erro
     configure_output_streams()
     assert stream.encoding == encoding
     expected = (
-        "backslashreplace" if encoding == "cp936" and errors == "strict" else errors
+        "backslashreplace"
+        if encoding == "cp936"
+        and errors in {"strict", "surrogateescape", "surrogatepass"}
+        else errors
     )
     assert stream.errors == expected
     stream.write("中文 🚚")

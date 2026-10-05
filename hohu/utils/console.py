@@ -13,5 +13,10 @@ def configure_output_streams() -> None:
             continue
         if codecs.lookup(encoding).name == "utf-8":
             continue
-        if getattr(stream, "errors", None) == "strict":
+        # Surrogate handlers still reject ordinary unencodable Unicode characters.
+        if getattr(stream, "errors", None) in {
+            "strict",
+            "surrogateescape",
+            "surrogatepass",
+        }:
             reconfigure(errors="backslashreplace")
