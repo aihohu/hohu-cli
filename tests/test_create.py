@@ -16,8 +16,16 @@ runner = CliRunner()
 @pytest.fixture
 def creation(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    clone = Mock()
-    monkeypatch.setattr(create_module, "run_command", clone)
+    clone = Mock(
+        return_value={
+            "source": "github",
+            "repository": "https://example.invalid/repo",
+            "branch": "main",
+            "commit": "a" * 40,
+        }
+    )
+    monkeypatch.setattr(create_module.RepositoryCloner, "clone", clone)
+    monkeypatch.setattr(create_module, "load_config", lambda: {})
     prompt = Mock(side_effect=AssertionError("Unexpected component prompt"))
     monkeypatch.setattr(create_module.questionary, "confirm", prompt)
     return tmp_path, clone, prompt
@@ -43,7 +51,10 @@ def test_explicit_components_create_only_selected_without_prompt(creation):
     info = json.loads((root / "my project/.hohu/project.json").read_text())
     assert info["components"] == ["Backend", "Frontend"]
     assert clone.call_count == 2
-    assert clone.call_args_list[0].args[0][-1] == str(root / "my project/hohu-admin")
+    assert clone.call_args_list[0].args[:2] == (
+        "Backend",
+        root / "my project/hohu-admin",
+    )
     prompt.assert_not_called()
 
 

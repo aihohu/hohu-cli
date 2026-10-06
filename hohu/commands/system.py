@@ -24,6 +24,7 @@ def show_info():
 
     table.add_row("Version", f"[green]{__version__}[/green]")
     table.add_row("Language", f"[cyan]{config.get('language', 'auto')}[/cyan]")
+    table.add_row(i18n.t("system_source_label"), str(config.get("source", "auto")))
     table.add_row("Config Path", f"[dim]{CONFIG_FILE}[/dim]")
     table.add_row("I18n Status", "[green]Loaded[/green]")
 

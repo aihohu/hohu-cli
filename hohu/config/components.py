@@ -1,13 +1,24 @@
-"""
-统一的组件配置模块
-集中管理所有组件相关的配置信息，避免代码重复
-"""
+"""Central component commands and official repository sources."""
+
+from enum import Enum
+
+OFFICIAL_BRANCH = "main"
+
+
+class RepositorySource(str, Enum):
+    """Supported policies for official component repositories."""
+
+    auto = "auto"
+    github = "github"
+    gitee = "gitee"
+
 
 # 组件配置统一管理
 COMPONENT_CONFIG = {
     "Backend": {
         "folder": "hohu-admin",
         "repo": "https://github.com/aihohu/hohu-admin.git",
+        "mirrors": {"gitee": "https://gitee.com/hohux/hohu-admin.git"},
         "install_cmd": ["uv", "sync"],
         "fallback_cmd": ["pip", "install", "-r", "requirements.txt"],
         "dev_cmd": ["uv", "run", "fastapi", "dev", "app/main.py"],
@@ -17,6 +28,7 @@ COMPONENT_CONFIG = {
     "Frontend": {
         "folder": "hohu-admin-web",
         "repo": "https://github.com/aihohu/hohu-admin-web.git",
+        "mirrors": {"gitee": "https://gitee.com/hohux/hohu-admin-web.git"},
         "install_cmd": ["pnpm", "install"],
         "fallback_cmd": ["npm", "install"],
         "dev_cmd": ["pnpm", "dev"],
@@ -25,6 +37,7 @@ COMPONENT_CONFIG = {
     "App": {
         "folder": "hohu-admin-app",
         "repo": "https://github.com/aihohu/hohu-admin-app.git",
+        "mirrors": {"gitee": "https://gitee.com/hohux/hohu-admin-app.git"},
         "install_cmd": ["pnpm", "install"],
         "fallback_cmd": ["npm", "install"],
         "dev_cmd": ["pnpm", "dev"],  # 基础命令，实际使用时根据target动态生成
@@ -62,17 +75,10 @@ def get_component_folder(component_name: str) -> str:
     return COMPONENT_CONFIG[component_name]["folder"]
 
 
-def get_component_repo(component_name: str) -> str:
-    """
-    获取指定组件的仓库地址
-
-    Args:
-        component_name: 组件名称
-
-    Returns:
-        str: 仓库地址
-    """
-    return COMPONENT_CONFIG[component_name]["repo"]
+def get_component_repo(component_name: str, source: str = "github") -> str:
+    """Return a concrete official source; creation resolves the auto policy."""
+    config = COMPONENT_CONFIG[component_name]
+    return config["repo"] if source == "github" else config["mirrors"][source]
 
 
 def get_component_install_cmd(component_name: str) -> list[str]:

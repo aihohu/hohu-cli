@@ -81,7 +81,16 @@ For agents or scripts, select components without interactive prompts:
 hohu create my-project --component backend --component web --non-interactive
 ```
 
-See [project creation](docs/PROJECT-CREATION.md) for component aliases, failure handling and initialization boundaries.
+The default `auto` source tries GitHub first and switches to the official Gitee mirror on network failure. To use one source explicitly:
+
+```bash
+hohu create my-project --source gitee
+hohu create my-project --source github
+```
+
+Save `"source": "gitee"` in `~/.hohu/config.json` to use Gitee by default, preserving other settings. Explicit sources and custom repositories do not fall back. Official repositories check out `main`; custom repositories keep their remote default branch. Each completed component's source and commit are recorded in `.hohu/project.json`.
+
+See [project creation](docs/PROJECT-CREATION.md) for source priority, component aliases, failure recovery and initialization boundaries.
 
 Confirm each component (Backend / Frontend / App) interactively. Defaults to `hohu-admin` if no name is given.
 

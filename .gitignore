@@ -26,3 +26,6 @@ wheels/
 .pytest_cache
 .ruff_cache
 
+# Claude Code local settings (team-shared settings in .claude/settings.json is tracked)
+.claude/
+.local/

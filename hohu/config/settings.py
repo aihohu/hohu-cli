@@ -5,17 +5,18 @@ from pathlib import Path
 CONFIG_DIR = Path.home() / ".hohu"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
-DEFAULT_CONFIG = {"language": "auto"}
+DEFAULT_CONFIG = {"language": "auto", "source": "auto"}
 
 
 def load_config():
     if not CONFIG_FILE.exists():
-        return DEFAULT_CONFIG
+        return DEFAULT_CONFIG.copy()
     try:
         with open(CONFIG_FILE, encoding="utf-8") as f:
-            return json.load(f)
+            config = json.load(f)
+            return config if isinstance(config, dict) else DEFAULT_CONFIG.copy()
     except Exception:
-        return DEFAULT_CONFIG
+        return DEFAULT_CONFIG.copy()
 
 
 def save_config(config: dict):

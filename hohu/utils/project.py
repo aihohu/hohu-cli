@@ -19,8 +19,19 @@ class ProjectManager:
         dot_hohu = root / ".hohu"
         dot_hohu.mkdir(exist_ok=True)
         data = {"name": name, "components": components}
-        (dot_hohu / "project.json").write_text(json.dumps(data, indent=4))
+        (dot_hohu / "project.json").write_text(
+            json.dumps(data, indent=4), encoding="utf-8"
+        )
+
+    @staticmethod
+    def record_repository(root: Path, component: str, repository: dict) -> None:
+        """Preserve actual source revisions for each completed component."""
+        data = ProjectManager.get_info(root)
+        data.setdefault("repositories", {})[component] = repository
+        (root / ".hohu/project.json").write_text(
+            json.dumps(data, indent=4, ensure_ascii=False), encoding="utf-8"
+        )
 
     @staticmethod
     def get_info(root: Path) -> dict:
-        return json.loads((root / ".hohu/project.json").read_text())
+        return json.loads((root / ".hohu/project.json").read_text(encoding="utf-8"))
