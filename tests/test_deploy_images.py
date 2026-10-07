@@ -1,9 +1,13 @@
 import json
 import subprocess
+from functools import partial
 from types import SimpleNamespace
 
 import pytest
 import typer
+from click import unstyle
+from rich.console import Console
+from typer import rich_utils
 
 from hohu.utils import images
 
@@ -391,11 +395,16 @@ def test_upgrade_pull_failure_does_not_stop_services(tmp_path, monkeypatch):
         ["deploy", "upgrade", "--help"],
     ],
 )
-def test_source_option_in_cli_help(arguments):
+@pytest.mark.parametrize("color", [False, True])
+def test_source_option_in_cli_help(arguments, color, monkeypatch):
     from typer.testing import CliRunner
 
     from hohu.main import app
 
-    result = CliRunner().invoke(app, arguments)
+    monkeypatch.setattr(rich_utils, "Console", partial(Console, legacy_windows=False))
+    monkeypatch.setattr(rich_utils, "FORCE_TERMINAL", color)
+    monkeypatch.setattr(rich_utils, "COLOR_SYSTEM", "standard" if color else None)
+    result = CliRunner().invoke(app, arguments, color=color)
     assert result.exit_code == 0
-    assert "--image-source" in result.output
+    assert ("\x1b[" in result.output) == color
+    assert "--image-source" in unstyle(result.output)
