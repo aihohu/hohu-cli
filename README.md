@@ -290,4 +290,6 @@ For Let's Encrypt, point `SSL_CERT_PATH` in `.env` to the certbot output directo
 
 Issues and Pull Requests are welcome!
 
+Maintainers can mirror the deployment's PostgreSQL, Redis, and Nginx images to public ACR repositories through the [infrastructure mirror workflow](docs/INFRASTRUCTURE-MIRRORS.md).
+
 See the [contribution guide](CONTRIBUTING.md) and [testing guide](docs/TESTING-GUIDELINES.md) for setup and check commands. During development, run related regressions; commit hooks run Ruff lint and format checks. Run the full suite and coverage at feature acceptance and in CI.

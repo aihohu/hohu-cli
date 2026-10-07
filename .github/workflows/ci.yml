@@ -63,5 +63,5 @@ jobs:
       - name: Test CLI repository sources and Skills installer boundary
         run: |
           mkdir -p .local/tests .local/reports
-          uv run --with coverage==7.16.2 coverage run --branch --source=hohu.commands.skills,hohu.commands.admin.create,hohu.utils.repository -m pytest --basetemp "${{ github.workspace }}/.local/tests/pytest" -o cache_dir="${{ github.workspace }}/.local/cache/pytest"
+          uv run --with coverage==7.16.2 coverage run --branch --source=hohu.commands.skills,hohu.commands.admin.create,hohu.utils.repository,tools.ops -m pytest --basetemp "${{ github.workspace }}/.local/tests/pytest" -o cache_dir="${{ github.workspace }}/.local/cache/pytest"
           uv run --with coverage==7.16.2 coverage report --fail-under=70

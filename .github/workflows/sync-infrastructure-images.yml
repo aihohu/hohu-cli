@@ -1,0 +1,122 @@
+name: Sync infrastructure images
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - hohu/templates/deploy/infrastructure-images.json
+      - hohu/templates/deploy/docker-compose.yml
+      - tools/ops/sync_infrastructure_images.py
+      - .github/workflows/sync-infrastructure-images.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: acr-infrastructure-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    name: Mirror ${{ matrix.image }} and verify anonymous pull
+    if: >-
+      github.repository == 'aihohu/hohu-cli' &&
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+      vars.ACR_INFRA_MIRROR_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: docker
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [postgres, redis, nginx]
+    env:
+      ACR_REGISTRY: ${{ vars.ACR_REGISTRY }}
+      ACR_NAMESPACE: ${{ vars.ACR_NAMESPACE }}
+      IMAGE: ${{ matrix.image }}
+      UV_CACHE_DIR: ${{ github.workspace }}/.local/cache/uv
+      REGISTRY_AUTH_FILE: ${{ github.workspace }}/.local/private/infra-mirror/auth.json
+      MIRROR_WORK_DIR: ${{ github.workspace }}/.local/tmp/infra-mirror
+      MIRROR_REPORT: ${{ github.workspace }}/.local/reports/infra-mirror-${{ matrix.image }}.json
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: '0.9.18'
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --all-extras --dev --python 3.12
+
+      - name: Check catalog and regressions before registry writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .local/tests .local/reports
+          uv run --no-sync pytest tests/test_infrastructure_mirror.py -q \
+            --basetemp "${{ github.workspace }}/.local/tests/infra" \
+            -o cache_dir="${{ github.workspace }}/.local/cache/pytest"
+          uv run --no-sync python -m tools.ops.sync_infrastructure_images validate \
+            --registry "$ACR_REGISTRY" --namespace "$ACR_NAMESPACE" --image "$IMAGE"
+
+      - name: Install Skopeo
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes skopeo
+
+      - name: Authenticate registries
+        shell: bash
+        env:
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$ACR_USERNAME" || -z "$ACR_PASSWORD" ]]; then
+            echo '::error::Configure ACR_USERNAME and ACR_PASSWORD in hohu-cli.'
+            exit 1
+          fi
+          umask 077
+          mkdir -p "$(dirname "$REGISTRY_AUTH_FILE")"
+          printf '%s' "$ACR_PASSWORD" | skopeo login --tls-verify=true --authfile "$REGISTRY_AUTH_FILE" \
+            --username "$ACR_USERNAME" --password-stdin "$ACR_REGISTRY"
+          if [[ -n "$DOCKERHUB_USERNAME" || -n "$DOCKERHUB_TOKEN" ]]; then
+            if [[ -z "$DOCKERHUB_USERNAME" || -z "$DOCKERHUB_TOKEN" ]]; then
+              echo '::error::Set both DOCKERHUB_USERNAME and DOCKERHUB_TOKEN, or neither.'
+              exit 1
+            fi
+            printf '%s' "$DOCKERHUB_TOKEN" | skopeo login --tls-verify=true --authfile "$REGISTRY_AUTH_FILE" \
+              --username "$DOCKERHUB_USERNAME" --password-stdin docker.io
+          fi
+
+      - name: Mirror runtime images and verify anonymous downloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run --no-sync python -m tools.ops.sync_infrastructure_images sync \
+            --registry "$ACR_REGISTRY" --namespace "$ACR_NAMESPACE" --image "$IMAGE" \
+            --work-dir "$MIRROR_WORK_DIR" --report "$MIRROR_REPORT"
+          printf '### Infrastructure mirror: %s\n\n```json\n' "$IMAGE" >> "$GITHUB_STEP_SUMMARY"
+          cat "$MIRROR_REPORT" >> "$GITHUB_STEP_SUMMARY"
+          printf '\n```\n' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: infrastructure-mirror-${{ matrix.image }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .local/reports/infra-mirror-${{ matrix.image }}.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Remove temporary registry credentials
+        if: always()
+        shell: bash
+        run: rm -f -- "$REGISTRY_AUTH_FILE"
