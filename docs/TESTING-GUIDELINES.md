@@ -69,7 +69,7 @@ PowerShell：
 
 ```powershell
 $env:COVERAGE_FILE = "$PWD/.local/reports/.coverage"
-uv run --with coverage==7.16.2 coverage run --branch --source=hohu.commands.skills,hohu.commands.admin.create,hohu.utils.repository,tools.ops -m pytest --basetemp "$PWD/.local/tests/pytest" -o cache_dir="$PWD/.local/cache/pytest"
+uv run --with coverage==7.16.2 coverage run --branch --source=hohu.commands.skills,hohu.commands.admin.create,hohu.utils.repository,hohu.utils.images,tools.ops -m pytest --basetemp "$PWD/.local/tests/pytest" -o cache_dir="$PWD/.local/cache/pytest"
 uv run --with coverage==7.16.2 coverage report --fail-under=70
 ```
 
@@ -77,10 +77,10 @@ Bash：
 
 ```bash
 export COVERAGE_FILE="$PWD/.local/reports/.coverage"
-uv run --with coverage==7.16.2 coverage run --branch --source=hohu.commands.skills,hohu.commands.admin.create,hohu.utils.repository,tools.ops -m pytest --basetemp "$PWD/.local/tests/pytest" -o cache_dir="$PWD/.local/cache/pytest"
+uv run --with coverage==7.16.2 coverage run --branch --source=hohu.commands.skills,hohu.commands.admin.create,hohu.utils.repository,hohu.utils.images,tools.ops -m pytest --basetemp "$PWD/.local/tests/pytest" -o cache_dir="$PWD/.local/cache/pytest"
 uv run --with coverage==7.16.2 coverage report --fail-under=70
 ```
 
-覆盖率门禁针对 Skills 安装、项目创建、仓库来源及镜像维护工具，至少 70%，不是整个 CLI 的总覆盖率。具体版本、平台和命令以工作流为准。
+覆盖率门禁针对 Skills 安装、项目创建、仓库来源、部署镜像换源及镜像维护工具，至少 70%，不是整个 CLI 的总覆盖率。具体版本、平台和命令以工作流为准。
 
 本地通过不能替代其他系统的验证；涉及进程、路径、编码和终端输出的修改需在 Windows/Linux 验证。Mock 测试不能代替真实远程克隆、Skills 安装或 Docker 部署。PR 应记录实际运行范围和结果，并说明尚未验证的环境。

@@ -12,6 +12,12 @@ import yaml
 from rich.console import Console
 
 from hohu.i18n import i18n
+from hohu.utils.images import (
+    ImagePullError,
+    ImageSource,
+    pull_compose_images,
+    select_source,
+)
 from hohu.utils.process import resolve_command, run_command, run_command_silent
 
 console = Console()
@@ -319,6 +325,9 @@ def _compose_cmd(deploy_dir: Path) -> list[str]:
         "-f",
         str(deploy_dir / "docker-compose.yml"),
     ]
+    generated = deploy_dir / "docker-compose.infra.yml"
+    if generated.exists():
+        cmd.extend(["-f", str(generated)])
     override = deploy_dir / "docker-compose.override.yml"
     if override.exists():
         cmd.extend(["-f", str(override)])
@@ -418,7 +427,7 @@ def _collect_port_overrides(
 def _build_override_services(
     deploy_dir: Path, pg_enabled: bool, redis_enabled: bool
 ) -> dict:
-    """构建 docker-compose.override.yml 的 services 数据结构"""
+    """构建 docker-compose.infra.yml 的 services 数据结构"""
     services: dict = {}
 
     if not pg_enabled:
@@ -450,10 +459,10 @@ def _build_override_services(
 
 
 def _update_infra_override(deploy_dir: Path) -> None:
-    """根据 ENABLE_POSTGRES/ENABLE_REDIS 和端口配置生成 override 文件"""
+    """生成独立基础设施配置，保留用户 docker-compose.override.yml。"""
     pg_enabled = _is_postgres_enabled(deploy_dir)
     redis_enabled = _is_redis_enabled(deploy_dir)
-    override_file = deploy_dir / "docker-compose.override.yml"
+    override_file = deploy_dir / "docker-compose.infra.yml"
 
     services = _build_override_services(deploy_dir, pg_enabled, redis_enabled)
 
@@ -520,42 +529,37 @@ def deploy_init(
     console.print(i18n.t("deploy_init_hint").format(env_file))
 
 
-def _get_infra_images(
-    deploy_dir: Path,
-    pg_enabled: bool,
-    redis_enabled: bool,
-) -> list[str]:
-    """从 docker-compose.yml 读取基础设施镜像名称"""
-    compose_file = deploy_dir / "docker-compose.yml"
-    data = yaml.safe_load(compose_file.read_text(encoding="utf-8"))
-    services = data.get("services", {})
-    images = []
-    if pg_enabled and "postgres" in services:
-        images.append(services["postgres"]["image"])
-    if redis_enabled and "redis" in services:
-        images.append(services["redis"]["image"])
-    if _is_nginx_enabled(deploy_dir) and "nginx" in services:
-        images.append(services["nginx"]["image"])
-    return images
-
-
 def _pull_images(
     cmd: list[str],
     deploy_dir: Path,
     pg_enabled: bool,
     redis_enabled: bool,
+    image_source: ImageSource | None = None,
+    migrate: bool = True,
 ) -> None:
-    """拉取镜像（本地构建时跳过应用镜像）"""
-    api_image = _read_env_value(deploy_dir, "API_IMAGE", "")
-    is_local_build = api_image and "/" not in api_image
-
-    if is_local_build:
-        console.print(f"[dim]{i18n.t('deploy_skip_pull_local')}[/dim]")
-        for img in _get_infra_images(deploy_dir, pg_enabled, redis_enabled):
-            run_command(["docker", "pull", img], cwd=deploy_dir)
-    else:
-        console.print(f"[bold cyan]{i18n.t('deploy_pulling')}[/bold cyan]")
-        run_command(cmd + ["pull"], cwd=deploy_dir)
+    """Resolve effective Compose images and prepare all images before startup."""
+    services = [
+        "hohu-admin-api",
+        "hohu-admin-scheduler",
+        "hohu-admin-web",
+    ]
+    if migrate:
+        services.append("db-migrator")
+    if pg_enabled:
+        services.append("postgres")
+    if redis_enabled:
+        services.append("redis")
+    if _is_nginx_enabled(deploy_dir):
+        services.append("nginx")
+    try:
+        source = select_source(
+            image_source,
+            _read_env_value(deploy_dir, "HOHU_IMAGE_SOURCE", "auto").strip("\"'"),
+        )
+        pull_compose_images(cmd, deploy_dir, services, source)
+    except ImagePullError as exc:
+        console.print(i18n.t("deploy_image_failed").format(str(exc)), markup=False)
+        raise typer.Exit(1) from exc
 
 
 def _start_infra(
@@ -573,7 +577,9 @@ def _start_infra(
 
     if infra_services:
         console.print(f"[bold cyan]{i18n.t('deploy_starting_infra')}[/bold cyan]")
-        run_command(cmd + ["up", "-d"] + infra_services, cwd=deploy_dir)
+        run_command(
+            cmd + ["up", "-d", "--pull", "never"] + infra_services, cwd=deploy_dir
+        )
 
     if pg_enabled:
         console.print(f"[bold cyan]{i18n.t('deploy_waiting_pg')}[/bold cyan]")
@@ -598,6 +604,9 @@ def deploy(
     no_migrate: bool = typer.Option(
         False, "--no-migrate", help=i18n.t("deploy_no_migrate_help")
     ),
+    image_source: ImageSource | None = typer.Option(
+        None, "--image-source", help=i18n.t("deploy_image_source_help")
+    ),
 ):
     """Deploy"""
     if ctx.invoked_subcommand is not None:
@@ -612,21 +621,31 @@ def deploy(
     pg_enabled = _is_postgres_enabled(deploy_dir)
     redis_enabled = _is_redis_enabled(deploy_dir)
 
-    _pull_images(cmd, deploy_dir, pg_enabled, redis_enabled)
+    _pull_images(
+        cmd, deploy_dir, pg_enabled, redis_enabled, image_source, not no_migrate
+    )
     _start_infra(cmd, deploy_dir, pg_enabled, redis_enabled)
 
     # Step 4: Migrate and synchronize deployment data
     if not no_migrate:
         console.print(f"[bold cyan]{i18n.t('deploy_migrating')}[/bold cyan]")
-        run_command(cmd + ["run", "--rm", "db-migrator"], cwd=deploy_dir)
+        run_command(
+            cmd + ["run", "--rm", "--pull", "never", "db-migrator"], cwd=deploy_dir
+        )
 
     # Step 5: Start all
     console.print(f"[bold cyan]{i18n.t('deploy_starting_all')}[/bold cyan]")
     if _is_nginx_enabled(deploy_dir):
-        run_command(cmd + ["up", "-d"], cwd=deploy_dir)
+        run_command(
+            cmd
+            + ["up", "-d", "--pull", "never"]
+            + _get_app_services(deploy_dir)
+            + ["nginx"],
+            cwd=deploy_dir,
+        )
     else:
         run_command(
-            cmd + ["up", "-d"] + _get_app_services(deploy_dir),
+            cmd + ["up", "-d", "--pull", "never"] + _get_app_services(deploy_dir),
             cwd=deploy_dir,
         )
 
@@ -678,7 +697,11 @@ def deploy_ps():
 
 
 @deploy_app.command(name="pull")
-def deploy_pull():
+def deploy_pull(
+    image_source: ImageSource | None = typer.Option(
+        None, "--image-source", help=i18n.t("deploy_image_source_help")
+    ),
+):
     """Pull images, migrate and synchronize data before restarting."""
     _ensure_docker()
     deploy_dir = _ensure_deploy_dir()
@@ -688,17 +711,23 @@ def deploy_pull():
     pg_enabled = _is_postgres_enabled(deploy_dir)
     redis_enabled = _is_redis_enabled(deploy_dir)
 
-    _pull_images(cmd, deploy_dir, pg_enabled, redis_enabled)
+    _pull_images(cmd, deploy_dir, pg_enabled, redis_enabled, image_source)
     _start_infra(cmd, deploy_dir, pg_enabled, redis_enabled)
     console.print(f"[bold cyan]{i18n.t('deploy_migrating')}[/bold cyan]")
-    run_command(cmd + ["run", "--rm", "db-migrator"], cwd=deploy_dir)
+    run_command(cmd + ["run", "--rm", "--pull", "never", "db-migrator"], cwd=deploy_dir)
 
     console.print(f"[bold cyan]{i18n.t('deploy_restarting')}[/bold cyan]")
     if _is_nginx_enabled(deploy_dir):
-        run_command(cmd + ["up", "-d"], cwd=deploy_dir)
+        run_command(
+            cmd
+            + ["up", "-d", "--pull", "never"]
+            + _get_app_services(deploy_dir)
+            + ["nginx"],
+            cwd=deploy_dir,
+        )
     else:
         run_command(
-            cmd + ["up", "-d"] + _get_app_services(deploy_dir),
+            cmd + ["up", "-d", "--pull", "never"] + _get_app_services(deploy_dir),
             cwd=deploy_dir,
         )
 
@@ -729,6 +758,9 @@ def deploy_upgrade(
     no_migrate: bool = typer.Option(
         False, "--no-migrate", help=i18n.t("deploy_no_migrate_help")
     ),
+    image_source: ImageSource | None = typer.Option(
+        None, "--image-source", help=i18n.t("deploy_image_source_help")
+    ),
 ):
     """Full upgrade: git pull → build → down → deploy"""
     from hohu.commands.admin.build import (
@@ -757,26 +789,36 @@ def deploy_upgrade(
     _ensure_env(deploy_dir)
     _update_infra_override(deploy_dir)
     cmd = _compose_cmd(deploy_dir)
-    console.print(f"[bold yellow]{i18n.t('deploy_stopping')}[/bold yellow]")
-    run_command(cmd + ["down"], cwd=deploy_dir)
 
     # Step 4: Deploy
     pg_enabled = _is_postgres_enabled(deploy_dir)
     redis_enabled = _is_redis_enabled(deploy_dir)
 
-    _pull_images(cmd, deploy_dir, pg_enabled, redis_enabled)
+    _pull_images(
+        cmd, deploy_dir, pg_enabled, redis_enabled, image_source, not no_migrate
+    )
+    console.print(f"[bold yellow]{i18n.t('deploy_stopping')}[/bold yellow]")
+    run_command(cmd + ["down"], cwd=deploy_dir)
     _start_infra(cmd, deploy_dir, pg_enabled, redis_enabled)
 
     if not no_migrate:
         console.print(f"[bold cyan]{i18n.t('deploy_migrating')}[/bold cyan]")
-        run_command(cmd + ["run", "--rm", "db-migrator"], cwd=deploy_dir)
+        run_command(
+            cmd + ["run", "--rm", "--pull", "never", "db-migrator"], cwd=deploy_dir
+        )
 
     console.print(f"[bold cyan]{i18n.t('deploy_starting_all')}[/bold cyan]")
     if _is_nginx_enabled(deploy_dir):
-        run_command(cmd + ["up", "-d"], cwd=deploy_dir)
+        run_command(
+            cmd
+            + ["up", "-d", "--pull", "never"]
+            + _get_app_services(deploy_dir)
+            + ["nginx"],
+            cwd=deploy_dir,
+        )
     else:
         run_command(
-            cmd + ["up", "-d"] + _get_app_services(deploy_dir),
+            cmd + ["up", "-d", "--pull", "never"] + _get_app_services(deploy_dir),
             cwd=deploy_dir,
         )
 

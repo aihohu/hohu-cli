@@ -149,5 +149,13 @@
   "skills_directory": "Working directory: {path}",
   "skills_launch": "Running {installer} with {source}. Follow its prompts for scope and installation results.",
   "skills_cancelled": "Skills installation interrupted.",
-  "skills_launch_error": "Unable to run the skills installer: {error}"
+  "skills_launch_error": "Unable to run the skills installer: {error}",
+  "deploy_image_source_help": "Image source: auto (ACR fallback on network failures), official, acr",
+  "deploy_image_source_invalid": "Image source must be auto, official, or acr.",
+  "deploy_image_timeout": "Image operation exceeded {} seconds.",
+  "deploy_image_command_failed": "Docker image command failed; check the Docker daemon and permissions.",
+  "deploy_image_config_failed": "Cannot resolve deployment images; check Compose configuration, variables and required services.",
+  "deploy_image_pulling": "Pulling image: {}",
+  "deploy_image_fallback": "Official registry unavailable; trying the same tag on ACR: {} → {}",
+  "deploy_image_failed": "Image preparation failed; deployment stopped: {}"
 }

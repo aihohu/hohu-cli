@@ -149,5 +149,13 @@
   "skills_directory": "当前工作目录：{path}",
   "skills_launch": "调用 {installer}，来源为 {source}。请按提示选择范围，并查看安装器返回的结果。",
   "skills_cancelled": "Skills 安装已中断。",
-  "skills_launch_error": "无法运行 Skills 安装器：{error}"
+  "skills_launch_error": "无法运行 Skills 安装器：{error}",
+  "deploy_image_source_help": "镜像来源：auto（官方网络失败时回退 ACR）、official、acr",
+  "deploy_image_source_invalid": "镜像来源必须为 auto、official 或 acr。",
+  "deploy_image_timeout": "镜像操作超过 {} 秒。",
+  "deploy_image_command_failed": "Docker 镜像命令失败，请检查 Docker 服务和权限。",
+  "deploy_image_config_failed": "无法解析部署镜像，请检查 Compose 配置、变量及所需服务。",
+  "deploy_image_pulling": "正在拉取镜像：{}",
+  "deploy_image_fallback": "官方源网络异常，尝试 ACR 同标签镜像：{} → {}",
+  "deploy_image_failed": "镜像准备失败，部署已停止：{}"
 }

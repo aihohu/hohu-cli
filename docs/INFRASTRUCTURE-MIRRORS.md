@@ -38,4 +38,4 @@ ACR 的双架构 index 是重新生成的，因此其 digest 通常不同于上�
 
 三个 matrix 任务分别输出工作流摘要和 `infrastructure-mirror-*` Artifact。报告 `status=passed`、`anonymous_pull=true` 表示镜像复制及公开下载验证通过。失败报告不代表已验证成功；复制过程可能已写入目标，修复后重跑对应任务即可。
 
-此功能提供基础镜像的维护者同步入口。CLI 当前仍按 Compose 中的官方地址拉取，尚未接入 ACR 自动换源；Certbot、Prometheus、Grafana 等可选服务镜像不在本次同步范围。
+此功能提供基础镜像的维护者同步入口。CLI 部署支持官方源与 ACR 换源，使用方法见[部署命令文档](https://hohu.org/zh/guide/cli/deploy)。Certbot、Prometheus、Grafana 等可选服务镜像不在本次同步范围。

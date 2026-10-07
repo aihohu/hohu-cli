@@ -190,7 +190,7 @@ def test_port_override_for_monitoring(tmp_path):
 
     deploy_mod._update_infra_override(deploy_dir)
 
-    override_file = deploy_dir / "docker-compose.override.yml"
+    override_file = deploy_dir / "docker-compose.infra.yml"
     assert override_file.is_file(), "override 文件未生成"
     override = yaml.safe_load(override_file.read_text(encoding="utf-8"))
     services = override.get("services", {})

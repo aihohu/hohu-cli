@@ -72,4 +72,6 @@ def test_migration_failure_prevents_application_start(tmp_path, monkeypatch, ent
             )
         else:
             deploy_module.deploy_pull()
-    assert commands == [["docker", "compose", "run", "--rm", "db-migrator"]]
+    assert commands == [
+        ["docker", "compose", "run", "--rm", "--pull", "never", "db-migrator"]
+    ]
