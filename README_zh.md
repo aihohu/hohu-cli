@@ -285,11 +285,7 @@ ssl/
 
 欢迎提交 Issue 和 Pull Request！
 
-1. Fork 本仓库
-2. 创建特性分支：`git checkout -b feature/my-feature`
-3. 提交更改：`git commit -m 'Add my-feature'`
-4. 推送：`git push origin feature/my-feature`
-5. 发起 Pull Request
+环境准备与检查命令见 [贡献指南](CONTRIBUTING.md) 和 [测试指南](docs/TESTING-GUIDELINES.md)。开发时运行相关回归，提交钩子执行 Ruff lint 和格式检查；全量测试与覆盖率在功能验收和 CI 执行。
 
 ## 开源协议
 

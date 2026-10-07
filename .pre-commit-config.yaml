@@ -1,0 +1,18 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff lint
+        entry: uv run --no-sync ruff check .
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: ruff-format
+        name: Ruff format check
+        entry: uv run --no-sync ruff format --check .
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]

@@ -290,8 +290,4 @@ For Let's Encrypt, point `SSL_CERT_PATH` in `.env` to the certbot output directo
 
 Issues and Pull Requests are welcome!
 
-1. Fork the repo
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Commit your changes: `git commit -m 'Add my-feature'`
-4. Push: `git push origin feature/my-feature`
-5. Open a Pull Request
+See the [contribution guide](CONTRIBUTING.md) and [testing guide](docs/TESTING-GUIDELINES.md) for setup and check commands. During development, run related regressions; commit hooks run Ruff lint and format checks. Run the full suite and coverage at feature acceptance and in CI.

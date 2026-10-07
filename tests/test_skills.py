@@ -1,9 +1,13 @@
 """Exercise the Skills CLI boundary without touching user installations."""
 
 import subprocess
+from functools import partial
 from pathlib import Path
 
 import pytest
+from click import unstyle
+from rich.console import Console
+from typer import rich_utils
 from typer.testing import CliRunner
 
 from hohu.commands import skills
@@ -26,12 +30,19 @@ def process_boundary(monkeypatch, tmp_path):
     return calls
 
 
-def test_help_does_not_require_node(monkeypatch):
+@pytest.mark.parametrize("color", [False, True])
+def test_help_does_not_require_node(monkeypatch, color):
     monkeypatch.setattr(skills.shutil, "which", lambda _name: None)
-    result = runner.invoke(app, ["skills", "install", "--help"])
+    # Exercise ANSI rendering even on Windows legacy consoles.
+    monkeypatch.setattr(rich_utils, "Console", partial(Console, legacy_windows=False))
+    monkeypatch.setattr(rich_utils, "FORCE_TERMINAL", color)
+    monkeypatch.setattr(rich_utils, "COLOR_SYSTEM", "standard" if color else None)
+    result = runner.invoke(app, ["skills", "install", "--help"], color=color)
     assert result.exit_code == 0
-    assert "--agent" in result.output
-    assert "--global" in result.output
+    assert ("\x1b[" in result.output) == color
+    output = unstyle(result.output)
+    assert "--agent" in output
+    assert "--global" in output
 
 
 def test_default_preserves_interaction_and_current_directory(process_boundary):

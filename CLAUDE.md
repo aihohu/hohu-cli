@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-hohu-cli 是一个基于 Typer 的 Python CLI 工具（v0.1.7），为 hohu-admin 全栈生态提供项目脚手架、依赖安装和多进程开发服务器管理。
+hohu-cli 是一个基于 Typer 的 Python CLI 工具，为 hohu-admin 全栈生态提供项目脚手架、依赖安装和多进程开发服务器管理。
 
 ## 常用命令
 
@@ -17,8 +17,8 @@ source .venv/bin/activate
 uv run ruff format .
 uv run ruff check --fix .
 
-# 运行测试
-uv run pytest
+# 开发中的相关回归（临时目录设置见测试指南）
+uv run pytest tests/test_create.py --basetemp "$PWD/.local/tests/pytest" -o cache_dir="$PWD/.local/cache/pytest"
 
 # 本地运行 CLI
 uv run hohu --help
@@ -67,13 +67,16 @@ hohu/
 
 ## 测试
 
+- 执行时机与完整命令见 [测试指南](docs/TESTING-GUIDELINES.md)。
+- 开发时执行相关回归；每次 commit 仅执行 Ruff lint 和格式检查；功能完成、交付验收及 CI 执行全量 pytest 和覆盖率检查。
+- 不在每次 commit 或 pre-push 中自动执行全量测试；没有新代码变化或未解决的问题时不重复已通过的全量验收。纯文档、检查配置改动验证对应内容和检查即可。
 - pytest，测试文件 `tests/test_*.py`
 - 核心模块需要 mock subprocess（`run_command` 内部直接 `typer.Exit`）
 - 注意不要定义与 pytest 内置同名的 fixture（如 `tmp_path`）
 
 每次完成代码编写，使用 `uv run ruff format .` 格式化代码
 
-使用 uv run ruff check .` 和 `uv run ruff check . --output-format=github` 检查代码
+使用 `uv run ruff check .` 和 `uv run ruff format --check .` 完成快速检查
 
 所有测试/运行python 都需在虚拟环境中 执行
 
