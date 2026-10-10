@@ -11,6 +11,7 @@ from hohu.config.components import (
 )
 from hohu.config.settings import load_config
 from hohu.i18n import i18n
+from hohu.utils.guidance import generate_guidance
 from hohu.utils.project import ProjectManager
 from hohu.utils.repository import RepositoryCloner, RepositoryError
 
@@ -112,6 +113,9 @@ def create(
                 )
                 raise typer.Exit(1)
 
+        guidance = generate_guidance(root, choices)
+        ProjectManager.record_guidance(root, guidance)
+        console.print(i18n.t("create_guidance_done"), markup=False)
         console.print(
             f"\n✨ {i18n.t('success_msg')} [bold cyan]cd {project_name} && hohu init[/bold cyan]"
         )

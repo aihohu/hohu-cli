@@ -43,9 +43,56 @@ hohu create my-project --source github
 
 ## 初始化与失败恢复
 
-创建只克隆所选仓库并生成 `.hohu/project.json`，不安装依赖、不配置数据库或启动服务。初始化使用项目目录内的 `hohu init`；它会执行组件初始化及数据库迁移，必须先准备正确的独立环境配置。开发启动使用 `hohu dev`，是前台持续运行的命令。CLI 输出不能代替实际服务健康检查。
+创建克隆所选仓库、生成 `.hohu/project.json`，并在全部组件克隆成功后生成项目总目录的开发入口，不安装依赖、不配置数据库或启动服务。初始化使用项目目录内的 `hohu init`；它会执行组件初始化及数据库迁移，必须先准备正确的独立环境配置。开发启动使用 `hohu dev`，是前台持续运行的命令。CLI 输出不能代替实际服务健康检查。
 
 失败时保留已经克隆的文件供检查，不自动删除项目或覆盖重试；处理部分创建时先核对 `.hohu/project.json` 与实际组件。
+
+## 项目总目录与 AI 开发入口
+
+Backend + Web 项目创建成功后的主要结构：
+
+```text
+equipment/
+├── AGENTS.md
+├── CLAUDE.md
+├── README.md
+├── .gitignore
+├── .hohu/project.json
+├── hohu-admin/
+└── hohu-admin-web/
+```
+
+| 文件 | 内容 |
+| --- | --- |
+| `AGENTS.md` | 所选组件地图、实际存在的文档入口、按任务选择 Skills 和阅读规范、跨组件契约和验证要求、本地工作文件位置 |
+| `CLAUDE.md` | 指向根目录 `AGENTS.md`，公共规则只维护一处 |
+| `README.md` | 项目与源码信息入口、初始化和启动说明、AI 开发及可选 Skills 安装入口 |
+| `.gitignore` | 忽略 `.local/`、`.hohu/tmp/`、环境文件，保留 `.env.example` |
+
+内容来自 CLI 内置模板，无额外模板下载；随 CLI 语言设置生成中文或英文，`auto` 跟随系统，其他语言回退英文。组件地图仅包含本次选择的组件；只有实际存在的标准 Agent、README 和规范文件才生成文档链接。自定义仓库缺少这些文档时，提示先检查源码及配置，不创建虚构文档。模板按源码引用细则，不复制具体认证有效期等版本参数，也不改写组件内规范。
+
+在编程助手中打开项目总目录，从 `AGENTS.md` 开始。单独打开组件时应显式提供总目录入口，不能假设独立 Git 仓库外的规则自动加载。Skills 可按需要通过 `hohu skills install` 安装，不是根目录入口的前提；创建时不自动安装 Skills。
+
+根目录 `AGENTS.md` 引导助手按任务优先使用已安装且适用的技能：项目创建、初始化、启动和排查使用 `hohu-project`；新增或扩展业务模块使用 `hohu-business-module`；小范围文案、样式或局部修复可直接依据项目规范处理。组合任务先准备项目，再开发业务。执行前定位并读取技能的 `SKILL.md`，核对任务范围和组件兼容性。技能缺失时说明情况并提供安装入口，继续项目规范允许完成的工作，不声称已调用缺失技能；不兼容时说明差异并遵循适用的项目规则。用户要求和项目规范优先于技能指引。`CLAUDE.md` 引用同一入口，因此共用这些规则。
+
+用户可以按应用和团队需求修改生成文件。根目录文件需自行纳入适当的版本管理或共享保存；组件仓库的提交不会包含父目录文件，根目录 `.gitignore` 也不会配置独立子仓库的忽略规则。
+
+`.hohu/project.json` 保留 `name`、`components` 和 `repositories`，生成文件全部写入成功后增加 `guidance`：
+
+```json
+{
+  "template_version": "2",
+  "cli_version": "0.1.15",
+  "language": "zh",
+  "files": ["AGENTS.md", "CLAUDE.md", "README.md", ".gitignore"]
+}
+```
+
+上面为 `guidance` 对象示例，`cli_version` 记录实际使用的 CLI 安装版本，不代表版本发布公告。模板内容或生成契约升级时需维护 `template_version`。
+
+写入前检查全部根目录目标，已存在的文件、目录或链接均不会覆盖。克隆失败时不生成根目录入口；入口生成失败时返回非零，不输出创建成功提示，保留组件及已写入文件供排查。只有完成生成才记录 `guidance`；元数据不代表应用已经初始化、测试通过或服务可用。当前没有入口补装、自动更新或覆盖现有项目的命令。
+
+入口行为回归见 [test_guidance.py](../tests/test_guidance.py) 和 [test_create.py](../tests/test_create.py)。
 
 Windows 下通过 Agent、管道或文件捕获输出时，标准流可能使用 GBK/cp936；直接连接 Windows 控制台通常使用 UTF-8。对于 GBK 等非 UTF-8 输出流，CLI 将 strict、surrogateescape、surrogatepass 改为 backslashreplace，保留原编码，将无法表示的 emoji 等字符输出为 Unicode 转义，避免提示文字中断创建。UTF-8 输出及 replace、ignore 等可处理不可编码字符的模式保持原样，无需为此修改系统编码。
 

@@ -2,11 +2,13 @@
 
 import importlib
 import json
+from itertools import combinations
 from unittest.mock import Mock
 
 import pytest
 from typer.testing import CliRunner
 
+from hohu.i18n import i18n
 from hohu.main import app
 
 create_module = importlib.import_module("hohu.commands.admin.create")
@@ -116,3 +118,98 @@ def test_cancelled_selection_creates_nothing(creation):
     assert result.exit_code == 130
     assert list(root.iterdir()) == []
     clone.assert_not_called()
+
+
+@pytest.mark.parametrize("language", ["en", "zh"])
+@pytest.mark.parametrize(
+    "components",
+    [
+        group
+        for size in range(1, 4)
+        for group in combinations(("backend", "web", "app"), size)
+    ],
+)
+def test_create_generates_component_specific_guidance(
+    creation, monkeypatch, language, components
+):
+    root, clone, _ = creation
+    monkeypatch.setattr(i18n, "lang", language)
+
+    def clone_component(_component, destination, _repo):
+        destination.mkdir()
+        (destination / "AGENTS.md").write_text("component rules", encoding="utf-8")
+        return {"commit": "a" * 40}
+
+    clone.side_effect = clone_component
+    args = ["create", "业务 project", "--non-interactive"]
+    for component in components:
+        args.extend(["--component", component])
+    result = runner.invoke(app, args)
+    assert result.exit_code == 0, result.output
+    project = root / "业务 project"
+    agents = (project / "AGENTS.md").read_text(encoding="utf-8")
+    for instruction in (
+        "hohu-project",
+        "hohu-business-module",
+        "SKILL.md",
+        "hohu skills install",
+    ):
+        assert instruction in agents
+    for component, folder in [
+        ("backend", "hohu-admin"),
+        ("web", "hohu-admin-web"),
+        ("app", "hohu-admin-app"),
+    ]:
+        assert (f"({folder}/AGENTS.md)" in agents) == (component in components)
+        if component in components:
+            assert (project / folder / "AGENTS.md").read_text() == "component rules"
+    assert "AGENTS.md" in (project / "CLAUDE.md").read_text(encoding="utf-8")
+    assert ".local/" in (project / ".gitignore").read_text()
+    readme = (project / "README.md").read_text(encoding="utf-8")
+    assert "hohu init" in readme and "hohu dev" in readme
+    assert ("项目" in readme) == (language == "zh")
+    metadata = json.loads((project / ".hohu/project.json").read_text())
+    assert metadata["guidance"]["language"] == language
+    assert metadata["guidance"]["template_version"]
+    assert metadata["guidance"]["cli_version"]
+    assert set(metadata["guidance"]["files"]) == {
+        "AGENTS.md",
+        "CLAUDE.md",
+        "README.md",
+        ".gitignore",
+    }
+    assert len(metadata["repositories"]) == len(components)
+
+
+def test_guidance_is_not_generated_after_clone_failure(creation):
+    root, clone, _ = creation
+    clone.side_effect = RuntimeError("clone failed")
+    result = runner.invoke(app, ["create", "demo", "--component", "web"])
+    assert result.exit_code == 1
+    assert not (root / "demo/AGENTS.md").exists()
+    assert "guidance" not in json.loads((root / "demo/.hohu/project.json").read_text())
+
+
+def test_guidance_failure_preserves_cloned_components_without_success(
+    creation, monkeypatch
+):
+    root, clone, _ = creation
+    monkeypatch.setattr(i18n, "lang", "en")
+
+    def clone_component(_component, destination, _repo):
+        destination.mkdir()
+        (destination / "README.md").write_text("user source", encoding="utf-8")
+        return {"commit": "b" * 40}
+
+    clone.side_effect = clone_component
+    monkeypatch.setattr(
+        create_module, "generate_guidance", Mock(side_effect=OSError("disk full"))
+    )
+    result = runner.invoke(app, ["create", "demo", "--component", "backend"])
+    assert result.exit_code == 1
+    assert "disk full" in result.output
+    assert "hohu init" not in result.output
+    assert (root / "demo/hohu-admin/README.md").read_text() == "user source"
+    metadata = json.loads((root / "demo/.hohu/project.json").read_text())
+    assert metadata["repositories"]["Backend"]["commit"] == "b" * 40
+    assert "guidance" not in metadata

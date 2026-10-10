@@ -33,5 +33,14 @@ class ProjectManager:
         )
 
     @staticmethod
+    def record_guidance(root: Path, guidance: dict) -> None:
+        """Record completed root guidance without replacing component provenance."""
+        data = ProjectManager.get_info(root)
+        data["guidance"] = guidance
+        (root / ".hohu/project.json").write_text(
+            json.dumps(data, indent=4, ensure_ascii=False), encoding="utf-8"
+        )
+
+    @staticmethod
     def get_info(root: Path) -> dict:
         return json.loads((root / ".hohu/project.json").read_text(encoding="utf-8"))

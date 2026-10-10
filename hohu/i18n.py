@@ -32,13 +32,19 @@ class I18n:
         if "en" not in self.locales:
             self.locales["en"] = {}
 
-    def t(self, key: str, **kwargs) -> str:
-        """获取翻译，支持 auto 跟随系统，支持变量插值"""
+    def get_language(self) -> str:
+        """Resolve the supported output language, including automatic detection."""
         target_lang = self.lang
 
         if target_lang == "auto":
             sys_lang = locale.getlocale()[0]
             target_lang = "zh" if sys_lang and "zh" in sys_lang else "en"
+
+        return target_lang if target_lang in self.locales else "en"
+
+    def t(self, key: str, **kwargs) -> str:
+        """获取翻译，支持 auto 跟随系统，支持变量插值"""
+        target_lang = self.get_language()
 
         # 优先找目标语言，找不到找英文，再找不到返回 key 本身
         lang_data = self.locales.get(target_lang, self.locales.get("en", {}))

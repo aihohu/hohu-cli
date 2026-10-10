@@ -1,0 +1,5 @@
+.local/
+.hohu/tmp/
+.env
+.env.*
+!.env.example

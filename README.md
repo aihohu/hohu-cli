@@ -90,7 +90,7 @@ hohu create my-project --source github
 
 Save `"source": "gitee"` in `~/.hohu/config.json` to use Gitee by default, preserving other settings. Explicit sources and custom repositories do not fall back. Official repositories check out `main`; custom repositories keep their remote default branch. Each completed component's source and commit are recorded in `.hohu/project.json`.
 
-See [project creation](docs/PROJECT-CREATION.md) for source priority, component aliases, failure recovery and initialization boundaries.
+Creation also generates root `AGENTS.md`, `CLAUDE.md`, `README.md` and `.gitignore` from bundled templates. Open the project root in your coding assistant; its reading map links the selected components' existing instructions. See [project creation](docs/PROJECT-CREATION.md) for guidance, source priority, component aliases, failure recovery and initialization boundaries.
 
 Confirm each component (Backend / Frontend / App) interactively. Defaults to `hohu-admin` if no name is given.
 

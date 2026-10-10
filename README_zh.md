@@ -90,7 +90,7 @@ hohu create my-project --source github
 
 在 `~/.hohu/config.json` 中保留其他设置并添加 `"source": "gitee"`，以后即可默认使用 Gitee。显式来源及自定义仓库不自动切换。官方仓库明确检出 `main`，自定义仓库沿用远程默认分支，并在 `.hohu/project.json` 中记录完成组件的实际来源和提交版本。来源优先级与失败恢复见[项目创建](docs/PROJECT-CREATION.md)。
 
-组件别名、失败处理及初始化边界见[项目创建命令](docs/PROJECT-CREATION.md)。
+创建时还会从内置模板生成根目录 `AGENTS.md`、`CLAUDE.md`、`README.md` 和 `.gitignore`。在编程助手中打开项目总目录，按阅读地图查阅所选组件的已有规范。入口说明、组件别名、失败处理及初始化边界见[项目创建命令](docs/PROJECT-CREATION.md)。
 
 逐步确认每个组件（后端 / 前端 / App）。不提供名称时默认为 `hohu-admin`。
 
