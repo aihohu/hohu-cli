@@ -75,7 +75,7 @@ def test_security_template_version_matches_cli_release() -> None:
     )
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
 
-    assert template_version == "0.1.15"
+    assert template_version == "0.1.14"
     assert f'version = "{template_version}"' in pyproject
 
 

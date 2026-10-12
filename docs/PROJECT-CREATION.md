@@ -82,7 +82,7 @@ equipment/
 ```json
 {
   "template_version": "2",
-  "cli_version": "0.1.15",
+  "cli_version": "0.1.14",
   "language": "zh",
   "files": ["AGENTS.md", "CLAUDE.md", "README.md", ".gitignore"]
 }

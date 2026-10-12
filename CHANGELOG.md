@@ -1,25 +1,54 @@
 # Changelog
 
-## [Unreleased]
+## v0.1.14 (Unreleased)
 
-### Licensing
+Changes since v0.1.13. This version has not been published.
 
-- Adopt Apache-2.0 for the current development tree, except where otherwise noted; keep the current version number unchanged.
-- Versions through v0.1.15 were previously released under the MIT license; that grant remains effective for copies already distributed. Existing third-party notices are retained.
-- Include license notices with distributions; this entry does not announce a release.
+### Features
 
-
-## v0.1.15
-
-### Security
-
-- **Private artifact edge deny** — Return 404 for legacy `/uploads/file_storage/**` and public `.csv/.txt/.xls/.xlsx` requests in built-in, SSL, and external Nginx templates
-- **Private storage persistence** — Mount a shared `private_uploads` volume into API and Scheduler containers so import/export artifacts survive container recreation and cleanup sees the same files
+- **Non-interactive project creation** — Add repeatable `--component` options and `--non-interactive` to `hohu create`; accept `web` as an alias for `frontend` and validate selections before creating files.
+- **GitHub and Gitee sources** — Add `--source auto|github|gitee` and a saved source preference. Auto mode falls back to the official Gitee mirror on network failure; explicit sources and custom repositories do not fall back. Record each cloned component's source and commit in `.hohu/project.json`.
+- **Project agent guidance** — Generate localized root `AGENTS.md`, `CLAUDE.md`, `README.md` and `.gitignore` files from bundled templates, with links to the selected components' existing documentation and guidance for choosing applicable Skills. Refuse to overwrite existing root files.
+- **Skills installation** — Add `hohu skills install` using pinned `skills@1.7.0`, with repeatable `--agent`, `--global` and `--yes` options. Requires stable Node.js >=22.20.0 and npm/npx.
+- **Monitoring commands** — Add `hohu monitoring init|up|down|logs|ps|restart` for the optional Prometheus/Grafana stack, including AI Tool Gateway and HITL dashboards and alert rules. Stopping monitoring leaves the application stack running.
 
 ### Deployment
 
-- **Storage directory initialization** — Create both public and private bind-mount roots during build/deploy initialization
-- **Template upgrade** — Bump the deployment template version so existing `.hohu/deploy` installations are prompted to receive the security update
+- **Automatic database initialization** — Run `python -m scripts.init_db` after Alembic migrations during deploy, migrate and upgrade. Generate `HOHU_ADMIN_PASSWORD` in the deployment `.env`; subsequent deployments synchronize built-in data without resetting the administrator password. Migration or initialization failure stops deployment.
+- **Official image fallback** — Add `--image-source auto|official|acr` and `HOHU_IMAGE_SOURCE`. Auto mode retries supported official images through ACR on network failure; preserve custom images and digest-pinned references.
+- **Infrastructure mirrors** — Add an ACR synchronization workflow for PostgreSQL, Redis and Nginx, with `linux/amd64` and `linux/arm64` runtime digest checks and anonymous download verification.
+- **Upload limits** — Align backend upload limits and the Nginx request-body ceiling, validate deployment settings and render the configured limit into proxy templates.
+- **Private storage persistence** — Mount shared private storage into API and Scheduler containers and initialize both public and private storage directories during build/deploy setup.
+- **Template upgrade** — Update the deployment template marker so existing v0.1.13 installations are prompted to synchronize the new configuration.
+
+### Security
+
+- **Private artifact access** — Return 404 for legacy `/uploads/file_storage/**` and public upload requests for `.csv`, `.txt`, `.xls` and `.xlsx` files in built-in, SSL and external Nginx templates.
+- **Production defaults** — Require configured database, Redis, application and Grafana secrets; use a 60-minute access-token default, one API worker and distinct API/Scheduler Snowflake worker IDs.
+- **Proxy headers** — Replace incoming `X-Forwarded-For` values with the client address at the bundled Nginx edge.
+
+### Bug Fixes
+
+- **Windows console output** — Avoid `UnicodeEncodeError` when emoji or surrogate characters are written to captured GBK/cp936 streams, while preserving the stream encoding.
+- **Command hints** — Clarify the `web` alias for the frontend component in project-creation messages.
+
+### Licensing
+
+- Adopt Apache-2.0 for the current development tree, except where otherwise noted, and include license notices in distributions.
+- Versions through v0.1.13 were released under MIT; that grant remains effective for copies already distributed. Existing third-party notices are retained.
+
+### Documentation and Testing
+
+- Document project creation, Skills installation, deployment initialization and infrastructure mirrors.
+- Add Windows/Linux CI coverage for project creation, Skills installation, repository sources, deployment image fallback and mirror tooling, with a 70% coverage gate for the configured modules.
+- Keep commit hooks focused on Ruff lint and formatting; run full tests and coverage at feature acceptance and in CI. Make deployment help assertions robust to ANSI colors.
+
+### Upgrade Notes
+
+- Refresh deployment templates and review `.env` before deploying; the new templates require a backend with the `scripts.init_db` module and replace the old `--init` workflow with automatic initialization.
+- Review `API_WORKER_ID`, `SCHEDULER_WORKER_ID`, required secrets and upload limits when upgrading an existing deployment.
+
+**Changes since last release**: [v0.1.13...HEAD](https://github.com/aihohu/hohu-cli/compare/v0.1.13...HEAD)
 
 ## v0.1.13
 
