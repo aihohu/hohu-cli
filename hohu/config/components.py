@@ -20,7 +20,8 @@ COMPONENT_CONFIG = {
         "repo": "https://github.com/aihohu/hohu-admin.git",
         "mirrors": {"gitee": "https://gitee.com/hohux/hohu-admin.git"},
         "install_cmd": ["uv", "sync"],
-        "fallback_cmd": ["pip", "install", "-r", "requirements.txt"],
+        # Never fall back to PATH pip: it may modify a different Python or user site.
+        "fallback_cmd": None,
         "dev_cmd": ["uv", "run", "fastapi", "dev", "app/main.py"],
         "color": "green",
         "init_script": "scripts/init.py",
