@@ -1,8 +1,37 @@
 # Changelog
 
-## v0.1.14 (Unreleased)
+## v0.1.15
 
-Changes since v0.1.13. This version has not been published.
+Changes since v0.1.14.
+
+### Features
+
+- **Unified source options** — Use `--source` / `-s` across project creation (`auto|github|gitee`), dependency initialization (`auto|official|mirror`) and deployment, including `deploy pull` and `deploy upgrade` (`auto|official|acr`). Keep `--image-source` as a compatible deployment alias.
+- **Dependency mirror recovery** — In `hohu init`, default `auto` mode retries eligible official public registry download failures once through mainland China mirrors: Tsinghua for Python and npmmirror for Web/App. Select `-s official` to disable fallback or `-s mirror` to use these mirrors directly. Authentication, certificate, dependency resolution, build, hash and lockfile errors do not trigger a source switch.
+- **Installation diagnostics** — Stream sanitized installation output, save logs under each component's `.local/reports/` and show recovery guidance when installation fails.
+
+### Bug Fixes
+
+- **Isolated backend installation** — Stop falling back to system pip when uv installation fails. Install backend dependencies into the component's `.venv` and run its initialization script with that environment's Python interpreter.
+- **Locked dependency installation** — Require component lockfiles and retain uv/pnpm throughout recovery. Use `uv sync --locked` and `pnpm install --frozen-lockfile`; Python mirror recovery exports locked versions and hashes, then uses `uv pip sync` without rewriting `uv.lock` or dropping the editable project installation. Frontend installation no longer falls back to npm.
+- **Custom source protection** — Preserve custom Python sources, private npm registries and scoped registry authentication. Conflicting explicit source choices stop with guidance; installation does not change global registry settings.
+
+### Documentation and Testing
+
+- Document source selection, mirror recovery conditions, lockfile requirements and installation troubleshooting.
+- Add regression coverage for source aliases, network failure classification, custom source protection, credential redaction, locked installation and backend environment isolation; include dependency recovery in the CI coverage gate.
+
+### Upgrade Notes
+
+- Ensure each selected component contains a valid `uv.lock` or `pnpm-lock.yaml` before running `hohu init`.
+- Choose package sources for your network connectivity. `auto` reacts to download failures, not user location; `hohu init -s official` keeps downloads on official registries without mirror fallback.
+- Source values remain command-specific. Initialization does not use the saved repository source preference or persist its `-s` choice; existing deployment `--image-source` and `HOHU_IMAGE_SOURCE` settings remain supported.
+
+**Full Changelog**: [v0.1.14...v0.1.15](https://github.com/aihohu/hohu-cli/compare/v0.1.14...v0.1.15)
+
+## v0.1.14
+
+Changes since v0.1.13.
 
 ### Features
 
@@ -48,7 +77,7 @@ Changes since v0.1.13. This version has not been published.
 - Refresh deployment templates and review `.env` before deploying; the new templates require a backend with the `scripts.init_db` module and replace the old `--init` workflow with automatic initialization.
 - Review `API_WORKER_ID`, `SCHEDULER_WORKER_ID`, required secrets and upload limits when upgrading an existing deployment.
 
-**Changes since last release**: [v0.1.13...HEAD](https://github.com/aihohu/hohu-cli/compare/v0.1.13...HEAD)
+**Full Changelog**: [v0.1.13...v0.1.14](https://github.com/aihohu/hohu-cli/compare/v0.1.13...v0.1.14)
 
 ## v0.1.13
 
