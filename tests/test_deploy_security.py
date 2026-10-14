@@ -69,14 +69,12 @@ def test_private_storage_paths_are_documented_in_env_template() -> None:
     assert "LOCAL_FILE_STORAGE_ROOT=/app/private_uploads/file_storage" in env_example
 
 
-def test_security_template_version_matches_cli_release() -> None:
+def test_security_template_version_is_tracked_independently() -> None:
     template_version = (
         (TEMPLATES / ".template-version").read_text(encoding="utf-8").strip()
     )
-    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-
+    # Template revisions change with deployment files, independently of CLI releases.
     assert template_version == "0.1.14"
-    assert f'version = "{template_version}"' in pyproject
 
 
 def test_compose_has_no_known_credential_fallbacks() -> None:
