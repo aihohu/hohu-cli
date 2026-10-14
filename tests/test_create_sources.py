@@ -26,7 +26,8 @@ def clone_urls(transport):
     ]
 
 
-def test_explicit_gitee_source_is_supported(workspace):
+@pytest.mark.parametrize("flag", ["--source", "-s"])
+def test_explicit_gitee_source_is_supported(workspace, flag):
     root, transport = workspace
     result = runner.invoke(
         app,
@@ -37,7 +38,7 @@ def test_explicit_gitee_source_is_supported(workspace):
             "backend",
             "--component",
             "web",
-            "--source",
+            flag,
             "gitee",
             "--non-interactive",
         ],

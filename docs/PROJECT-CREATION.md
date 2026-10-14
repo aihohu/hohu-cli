@@ -18,7 +18,7 @@ hohu create my-project --source gitee
 hohu create my-project --source github
 ```
 
-`--source` 支持 `auto`、`github`、`gitee`。显式选择 GitHub/Gitee 时只使用该来源，不自动切换。未指定参数时读取 `~/.hohu/config.json` 的 `source`，未配置则使用 `auto`。如需以后都使用 Gitee，在已有配置文件中保留其他设置并添加：
+`--source`（短参数 `-s`）支持 `auto`、`github`、`gitee`。显式选择 GitHub/Gitee 时只使用该来源，不自动切换。未指定参数时读取 `~/.hohu/config.json` 的 `source`，未配置则使用 `auto`。如需以后都使用 Gitee，在已有配置文件中保留其他设置并添加：
 
 ```json
 {
@@ -43,7 +43,25 @@ hohu create my-project --source github
 
 ## 初始化与失败恢复
 
-Backend 依赖使用项目虚拟环境中的 `uv sync`。失败时初始化返回非零并保留已创建文件，修复网络或依赖问题后重新运行 `hohu init`；不会自动调用系统 `pip` 或向用户 Python 环境安装依赖。
+初始化依赖源与创建时的源码来源分别选择：
+
+```bash
+hohu init                    # auto：保留配置；公共官方包源网络失败时回退一次
+hohu init -s mirror          # 直接使用国内公共镜像
+hohu init --source official  # 仅官方包源，不回退
+```
+
+Backend 使用 `uv sync --locked` 安装到组件 `.venv`。公共 PyPI 下载超时、连接失败等传输错误会尝试清华 PyPI 镜像；镜像路径通过 `uv export --locked` 导出锁定版本与哈希，再使用 `uv pip sync --python <组件虚拟环境解释器>` 安装。此处仍使用 uv，不会调用系统 pip。保留 `uv.lock` 原内容和 editable 项目安装，初始化脚本直接使用该虚拟环境解释器。
+
+Web/App 始终使用 `pnpm install --frozen-lockfile`，默认 registry 为 npm 官方源时，传输失败回退到 `https://registry.npmmirror.com/`；项目已配置 npmmirror 时直接使用它，不重复回退。不会切换到 npm。
+
+现有 Python 自定义源配置、非公共 npm 默认源均保持原样，使用 `auto` 安装且不自动覆盖。显式 `official/mirror` 与这些配置冲突时提示处理配置；npm 的 scoped registry 和认证仍由 pnpm 保留。不会修改全局配置。创建命令保存的 `source: gitee` 不影响依赖源。
+
+认证、证书、依赖冲突、构建、哈希或锁文件错误不触发换源；镜像失败后返回非零。缺少锁文件时需先用项目包管理器生成并审查，CLI 不自动选择最新依赖。Python 解释器、Git/固定 URL 依赖、构建脚本自行下载的文件不由公共包镜像替换；锁文件中的固定 tarball 地址不会被重写。
+
+安装过程显示实际命令与切换来源，脱敏日志位于各组件 `.local/reports/install-*.log`。失败后可修复原因重跑 `hohu init`。所有选源参数只影响当前命令，`official/mirror` 不执行二次回退。
+
+部署镜像选源也支持统一参数：`hohu deploy -s acr`、`hohu deploy pull -s acr`、`hohu deploy upgrade -s acr`；各命令的 `--source/-s` 接受 `auto/official/acr`，原 `--image-source` 保留为兼容别名，`HOHU_IMAGE_SOURCE` 配置优先级保持不变。
 
 创建克隆所选仓库、生成 `.hohu/project.json`，并在全部组件克隆成功后生成项目总目录的开发入口，不安装依赖、不配置数据库或启动服务。初始化使用项目目录内的 `hohu init`；它会执行组件初始化及数据库迁移，必须先准备正确的独立环境配置。开发启动使用 `hohu dev`，是前台持续运行的命令。CLI 输出不能代替实际服务健康检查。
 

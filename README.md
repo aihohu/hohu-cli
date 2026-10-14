@@ -84,7 +84,7 @@ hohu create my-project --component backend --component web --non-interactive
 The default `auto` source tries GitHub first and switches to the official Gitee mirror on network failure. To use one source explicitly:
 
 ```bash
-hohu create my-project --source gitee
+hohu create my-project -s gitee
 hohu create my-project --source github
 ```
 
@@ -100,6 +100,18 @@ Confirm each component (Backend / Frontend / App) interactively. Defaults to `ho
 cd my-project
 hohu init
 ```
+
+Use `hohu init -s mirror` for domestic package mirrors or `hohu init -s official`
+to disable fallback. The default `auto` preserves configured sources and retries
+official package download failures once using Tsinghua PyPI / npmmirror. Installation
+keeps uv / pnpm and the locked versions; it never falls back to system pip or npm.
+Existing lockfiles are required. Custom registries, non-network failures and fixed
+download URLs are not silently replaced. Logs are saved under each component's
+`.local/reports/`. See [source selection and recovery](docs/PROJECT-CREATION.md).
+
+Source flags use `--source` / `-s` across commands: `create` selects Git repositories,
+`init` selects package sources, and `deploy`, `deploy pull`, `deploy upgrade` select
+container images (`auto/official/acr`). Deployment's `--image-source` remains an alias.
 
 Automatically detects project config and installs all dependencies.
 

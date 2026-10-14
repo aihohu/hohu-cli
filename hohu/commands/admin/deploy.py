@@ -605,7 +605,11 @@ def deploy(
         False, "--no-migrate", help=i18n.t("deploy_no_migrate_help")
     ),
     image_source: ImageSource | None = typer.Option(
-        None, "--image-source", help=i18n.t("deploy_image_source_help")
+        None,
+        "--source",
+        "-s",
+        "--image-source",
+        help=i18n.t("deploy_image_source_help"),
     ),
 ):
     """Deploy"""
@@ -699,7 +703,11 @@ def deploy_ps():
 @deploy_app.command(name="pull")
 def deploy_pull(
     image_source: ImageSource | None = typer.Option(
-        None, "--image-source", help=i18n.t("deploy_image_source_help")
+        None,
+        "--source",
+        "-s",
+        "--image-source",
+        help=i18n.t("deploy_image_source_help"),
     ),
 ):
     """Pull images, migrate and synchronize data before restarting."""
@@ -759,7 +767,11 @@ def deploy_upgrade(
         False, "--no-migrate", help=i18n.t("deploy_no_migrate_help")
     ),
     image_source: ImageSource | None = typer.Option(
-        None, "--image-source", help=i18n.t("deploy_image_source_help")
+        None,
+        "--source",
+        "-s",
+        "--image-source",
+        help=i18n.t("deploy_image_source_help"),
     ),
 ):
     """Full upgrade: git pull → build → down → deploy"""

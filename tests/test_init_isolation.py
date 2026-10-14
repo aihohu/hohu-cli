@@ -8,6 +8,8 @@ import pytest
 import typer
 from rich.console import Console
 
+from hohu.utils.dependencies import InstallError
+
 init_module = importlib.import_module("hohu.commands.admin.init")
 
 
@@ -23,15 +25,13 @@ def test_backend_sync_failure_never_invokes_global_pip(tmp_path, monkeypatch):
         lambda _root: {"name": "isolated", "components": ["Backend"]},
     )
     monkeypatch.setattr(init_module, "ensure_uv", lambda: None)
-    run = Mock(side_effect=typer.Exit(1))
-    fallback = Mock(side_effect=typer.Exit(1))
+    run = Mock()
+    install = Mock(side_effect=InstallError("dependency failure"))
     monkeypatch.setattr(init_module, "run_command", run)
-    monkeypatch.setattr(init_module, "run_with_fallback", fallback)
+    monkeypatch.setattr(init_module, "install_dependencies", install)
     with pytest.raises(typer.Exit) as exc:
         init_module.init()
     assert exc.value.exit_code == 1
-    fallback.assert_not_called()
-    run.assert_called_once_with(
-        ["uv", "sync"], cwd=backend, context="installing Backend dependencies"
-    )
+    run.assert_not_called()
+    install.assert_called_once()
     assert (backend / "scripts" / "init.py").exists()

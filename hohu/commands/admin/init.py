@@ -1,21 +1,29 @@
+import sys
+from typing import Annotated
+
 import typer
 from rich.console import Console
 
 from hohu.config.components import (
-    get_component_fallback_cmd,
     get_component_folder,
     get_component_init_script,
     get_component_install_cmd,
 )
 from hohu.i18n import i18n
-from hohu.utils.process import CommandNotFoundError, run_command, run_with_fallback
+from hohu.utils.dependencies import DependencySource, InstallError, install_dependencies
+from hohu.utils.process import CommandNotFoundError, run_command
 from hohu.utils.project import ProjectManager
 from hohu.utils.uv import ensure_uv
 
 console = Console()
 
 
-def init():
+def init(
+    source: Annotated[
+        DependencySource,
+        typer.Option("--source", "-s", help=i18n.t("dependency_source_help")),
+    ] = DependencySource.auto,
+):
     """init"""
     # 检测项目根目录（需包含 .hohu/project.json）
     root = ProjectManager.find_root()
@@ -40,25 +48,16 @@ def init():
         if not path.exists():
             continue
 
-        # Step 1: 安装依赖（优先使用主命令，失败则尝试备用命令）
+        # Install from the lockfile with bounded, same-manager network recovery.
         install_cmd = get_component_install_cmd(item)
-        fallback_cmd = get_component_fallback_cmd(item)
 
         console.print(f"📦 [dim]Installing dependencies in {folder}...[/dim]")
 
         try:
-            if fallback_cmd:
-                run_with_fallback(
-                    install_cmd,
-                    fallback_cmd,
-                    cwd=path,
-                    context=f"installing {item} dependencies",
-                )
-            else:
-                run_command(
-                    install_cmd, cwd=path, context=f"installing {item} dependencies"
-                )
-        except (CommandNotFoundError, typer.Exit):
+            install_dependencies(item, path, source)
+        except (InstallError, CommandNotFoundError, typer.Exit) as exc:
+            if isinstance(exc, InstallError):
+                console.print(str(exc), markup=False)
             console.print(
                 f"[red]❌ {i18n.t('dependency_install_failed')} for {item}[/red]"
             )
@@ -77,7 +76,18 @@ def init():
                 )
                 try:
                     run_command(
-                        ["uv", "run", "python", init_script_rel],
+                        [
+                            str(
+                                path
+                                / ".venv"
+                                / (
+                                    "Scripts/python.exe"
+                                    if sys.platform == "win32"
+                                    else "bin/python"
+                                )
+                            ),
+                            init_script_rel,
+                        ],
                         cwd=path,
                         context=f"running init script for {item}",
                     )

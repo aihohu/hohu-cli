@@ -77,7 +77,7 @@ def create(
         False, "--non-interactive", help=i18n.t("create_non_interactive_help")
     ),
     source: RepositorySource | None = typer.Option(
-        None, "--source", help=i18n.t("create_source_help")
+        None, "--source", "-s", help=i18n.t("create_source_help")
     ),
 ):
     """Clone the selected components without overwriting existing projects."""
