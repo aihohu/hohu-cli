@@ -1,4 +1,4 @@
-name: hohu
+name: ${HOHU_DEPLOY_NAME:-hohu}
 
 services:
   # ============================
@@ -6,7 +6,7 @@ services:
   # ============================
   postgres:
     image: postgres:18-alpine
-    container_name: hohu-postgres
+    container_name: ${HOHU_DEPLOY_NAME:-hohu}-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-hohu}
@@ -15,7 +15,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hohu}"]
+      test: ["CMD-SHELL", "pg_isready -h postgres -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,7 +25,7 @@ services:
 
   redis:
     image: redis:8.6-alpine
-    container_name: hohu-redis
+    container_name: ${HOHU_DEPLOY_NAME:-hohu}-redis
     restart: unless-stopped
     command: >
       redis-server
@@ -46,7 +46,7 @@ services:
   # ============================
   db-migrator:
     image: ${API_IMAGE:-ghcr.io/aihohu/hohu-admin}:${IMAGE_TAG:-latest}
-    container_name: hohu-db-migrator
+    container_name: ${HOHU_DEPLOY_NAME:-hohu}-db-migrator
     env_file: .env
     environment:
       ENV: prod
@@ -75,7 +75,7 @@ services:
   # ============================
   hohu-admin-api:
     image: ${API_IMAGE:-ghcr.io/aihohu/hohu-admin}:${IMAGE_TAG:-latest}
-    container_name: hohu-admin-api
+    container_name: ${HOHU_DEPLOY_NAME:-hohu}-admin-api
     restart: unless-stopped
     env_file: .env
     environment:
@@ -129,7 +129,7 @@ services:
   # 通过 Redis pub/sub 接收 web 进程发来的配置变更和手动触发事件
   hohu-admin-scheduler:
     image: ${API_IMAGE:-ghcr.io/aihohu/hohu-admin}:${IMAGE_TAG:-latest}
-    container_name: hohu-admin-scheduler
+    container_name: ${HOHU_DEPLOY_NAME:-hohu}-admin-scheduler
     restart: unless-stopped
     command: ["python", "-m", "app.scheduler_worker"]
     env_file: .env
@@ -169,7 +169,7 @@ services:
 
   hohu-admin-web:
     image: ${WEB_IMAGE:-ghcr.io/aihohu/hohu-admin-web}:${IMAGE_TAG:-latest}
-    container_name: hohu-admin-web
+    container_name: ${HOHU_DEPLOY_NAME:-hohu}-admin-web
     restart: unless-stopped
     environment:
       API_URL: http://hohu-admin-api:8000/
@@ -198,7 +198,7 @@ services:
   # 如使用自己的 nginx，可注释掉此服务，参考 nginx/proxy-snippet.conf
   nginx:
     image: nginx:alpine
-    container_name: hohu-nginx
+    container_name: ${HOHU_DEPLOY_NAME:-hohu}-nginx
     restart: unless-stopped
     ports:
       - "${HTTP_PORT:-80}:80"
@@ -237,7 +237,7 @@ services:
   # 启用方式: docker compose run --rm certbot certonly
   certbot:
     image: certbot/certbot
-    container_name: hohu-certbot
+    container_name: ${HOHU_DEPLOY_NAME:-hohu}-certbot
     volumes:
       - certbot-www:/var/www/certbot
       - certbot-conf:/etc/letsencrypt
@@ -254,7 +254,7 @@ services:
   prometheus:
     profiles: [monitoring]
     image: prom/prometheus:v2.55.1
-    container_name: hohu-prometheus
+    container_name: ${HOHU_DEPLOY_NAME:-hohu}-prometheus
     restart: unless-stopped
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -274,7 +274,7 @@ services:
   grafana:
     profiles: [monitoring]
     image: grafana/grafana:11.3.0
-    container_name: hohu-grafana
+    container_name: ${HOHU_DEPLOY_NAME:-hohu}-grafana
     restart: unless-stopped
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
@@ -302,22 +302,22 @@ services:
 # ============================
 volumes:
   pgdata:
-    name: hohu-pgdata
+    name: ${HOHU_DEPLOY_NAME:-hohu}-pgdata
   redisdata:
-    name: hohu-redisdata
+    name: ${HOHU_DEPLOY_NAME:-hohu}-redisdata
   certbot-www:
-    name: hohu-certbot-www
+    name: ${HOHU_DEPLOY_NAME:-hohu}-certbot-www
   certbot-conf:
-    name: hohu-certbot-conf
+    name: ${HOHU_DEPLOY_NAME:-hohu}-certbot-conf
   prometheus-data:
-    name: hohu-prometheus-data
+    name: ${HOHU_DEPLOY_NAME:-hohu}-prometheus-data
   grafana-data:
-    name: hohu-grafana-data
+    name: ${HOHU_DEPLOY_NAME:-hohu}-grafana-data
 
 # ============================
 # Network
 # ============================
 networks:
   hohu-network:
-    name: hohu-network
+    name: ${HOHU_DEPLOY_NAME:-hohu}-network
     driver: bridge

@@ -14,7 +14,7 @@ from rich.table import Table
 
 from hohu.commands.admin.deploy import (
     _ensure_storage_dirs,
-    _generate_secrets,
+    _initialize_deploy_env,
     _sync_templates,
 )
 from hohu.i18n import i18n
@@ -168,20 +168,11 @@ def _build_components(
 def _ensure_deploy_dir(project_root: Path) -> Path:
     """确保部署目录存在，不存在则自动创建并同步模板"""
     deploy_dir = project_root / ".hohu" / "deploy"
-    if not deploy_dir.exists():
-        deploy_dir.mkdir(parents=True, exist_ok=True)
-        _sync_templates(deploy_dir)
-
-        # 从 .env.example 生成 .env
-        env_file = deploy_dir / ".env"
-        example_file = deploy_dir / ".env.example"
-        if not env_file.exists() and example_file.exists():
-            import shutil
-
-            shutil.copy2(example_file, env_file)
-        if env_file.exists():
-            _generate_secrets(env_file)
-
+    new_env = not (deploy_dir / ".env").exists()
+    deploy_dir.mkdir(parents=True, exist_ok=True)
+    _sync_templates(deploy_dir)
+    env_file = _initialize_deploy_env(deploy_dir)
+    if new_env:
         console.print(f"[green]{i18n.t('deploy_init_success')}[/green]")
         console.print(i18n.t("deploy_init_hint").format(env_file))
     _ensure_storage_dirs(deploy_dir)

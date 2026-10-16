@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.1.16
+
+Changes since v0.1.15.
+
+### Bug Fixes
+
+- **Deployment resource isolation** — Give newly initialized deployments a persistent `HOHU_DEPLOY_NAME` so separate projects no longer share containers, networks or PostgreSQL/Redis volumes. Previously, a second project's generated password could be used against the first project's database volume, causing authentication failure. Existing configurations without this field retain the original `hohu` resource names.
+- **Database authentication preflight** — Before migrations in deploy, pull and upgrade, verify access to the internal PostgreSQL database over the service network using its configured credentials. Stop with recovery guidance on failure, without printing credentials or changing database passwords.
+- **Build initialization recovery** — Initialize missing deployment configuration even when `.hohu/deploy/` already exists, while preserving existing deployment identities and credentials on repeated builds.
+
+### Documentation and Testing
+
+- Document deployment resource isolation, credential recovery, legacy volume compatibility and shared host-port/local-image constraints.
+- Add regressions for independent project resources, repeated builds, partial initialization, legacy template upgrades and authentication failures stopping deploy, pull and upgrade before migrations.
+
+### Upgrade Notes
+
+- Accept deployment template revision `0.1.16` to receive the resource naming and readiness changes. Existing deployments keep their volumes; an existing password mismatch still requires restoring the matching configuration or repairing database access. See [deployment resource and credential handling](docs/DEPLOYMENT-BOOTSTRAP.md#部署资源与数据库凭据).
+- Preserve the existing deployment `.env` and its `HOHU_DEPLOY_NAME`, if present. Changing the name or deleting and regenerating the file selects different resources; it does not migrate existing data or recover stored passwords.
+- For multiple projects on the same host, assign distinct host ports and use distinct `hohu build --tag <project-tag>` values to avoid overwriting the shared default local image tags.
+
+**Full Changelog**: [v0.1.15...v0.1.16](https://github.com/aihohu/hohu-cli/compare/v0.1.15...v0.1.16)
+
 ## v0.1.15
 
 Changes since v0.1.14.

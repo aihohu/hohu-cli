@@ -74,6 +74,7 @@
   "deploy_starting_infra": "正在启动 PostgreSQL 和 Redis...",
   "deploy_waiting_pg": "等待 PostgreSQL 就绪...",
   "deploy_pg_timeout": "PostgreSQL 启动超时，请检查日志",
+  "deploy_pg_credentials_failed": "PostgreSQL 已就绪，但账号认证或目标数据库访问失败。请核对 .hohu/deploy/.env 的 POSTGRES_USER、POSTGRES_PASSWORD、POSTGRES_DB 与已有数据库是否匹配。旧版 CLI 的多个项目会共用 hohu-pgdata；重建镜像或修改 .env 不会更新数据卷中的账号密码。请恢复匹配的配置，或由数据库管理员修复访问权限。本次未执行迁移，请勿通过删除数据卷解决此错误。",
   "deploy_migrating": "正在运行数据库迁移...",
   "deploy_starting_all": "正在启动所有服务...",
   "deploy_success": "部署完成！",

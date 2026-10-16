@@ -90,6 +90,27 @@ def _fix_line_endings(path: Path) -> None:
         path.write_bytes(content.replace(b"\r\n", b"\n"))
 
 
+def _initialize_deploy_env(deploy_dir: Path) -> Path:
+    """Persist a namespace only for new deployments; retain legacy identities."""
+    env_file = deploy_dir / ".env"
+    if not env_file.exists():
+        example = deploy_dir / ".env.example"
+        if not example.exists():
+            console.print(i18n.t("deploy_no_env_example"))
+            raise typer.Exit(1)
+        project = re.sub(r"[^a-z0-9_-]+", "-", deploy_dir.parent.parent.name.lower())
+        namespace = f"hohu-{project[:32].strip('-_') or 'app'}-{secrets.token_hex(6)}"
+        content = example.read_text(encoding="utf-8")
+        # Do not overwrite an environment file created concurrently.
+        try:
+            with env_file.open("x", encoding="utf-8") as stream:
+                stream.write(f"HOHU_DEPLOY_NAME={namespace}\n{content}")
+        except FileExistsError:
+            pass
+    _generate_secrets(env_file)
+    return env_file
+
+
 def _get_template_version(directory: Path) -> str:
     """读取目录中的 .template-version，不存在则返回空字符串"""
     version_file = directory / ".template-version"
@@ -266,7 +287,7 @@ def _ensure_env(deploy_dir: Path) -> Path:
     if not env_file.exists():
         example = deploy_dir / ".env.example"
         if example.exists():
-            shutil.copy2(example, env_file)
+            _initialize_deploy_env(deploy_dir)
             console.print(
                 f"[yellow]{i18n.t('deploy_env_created').format(env_file)}[/yellow]"
             )
@@ -515,15 +536,7 @@ def deploy_init(
     _sync_templates(target, force=force)
     _ensure_storage_dirs(target)
 
-    # 自动从 .env.example 生成 .env
-    env_file = target / ".env"
-    example_file = target / ".env.example"
-    if not env_file.exists() and example_file.exists():
-        shutil.copy2(example_file, env_file)
-
-    # 自动生成安全密钥和密码（仅首次，已存在则不覆盖）
-    if env_file.exists():
-        _generate_secrets(env_file)
+    env_file = _initialize_deploy_env(target)
 
     console.print(f"[green]{i18n.t('deploy_init_success')}[/green]")
     console.print(i18n.t("deploy_init_hint").format(env_file))
@@ -586,7 +599,17 @@ def _start_infra(
         pg_user = _read_env_value(deploy_dir, "POSTGRES_USER", "hohu")
         for _ in range(30):
             result = run_command_silent(
-                cmd + ["exec", "-T", "postgres", "pg_isready", "-U", pg_user],
+                cmd
+                + [
+                    "exec",
+                    "-T",
+                    "postgres",
+                    "pg_isready",
+                    "-h",
+                    "postgres",
+                    "-U",
+                    pg_user,
+                ],
                 cwd=deploy_dir,
                 check=False,
             )
@@ -596,6 +619,25 @@ def _start_infra(
         else:
             console.print(f"[red]{i18n.t('deploy_pg_timeout')}[/red]")
             raise typer.Exit(1)
+        _verify_postgres_credentials(cmd, deploy_dir)
+
+
+def _verify_postgres_credentials(cmd: list[str], deploy_dir: Path) -> None:
+    """Authenticate over the service network; socket/loopback may use trust."""
+    script = (
+        'PGPASSWORD="$POSTGRES_PASSWORD" PGCONNECT_TIMEOUT=5 '
+        'psql -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB" '
+        '-w -v ON_ERROR_STOP=1 -c "SELECT 1"'
+    )
+    result = run_command_silent(
+        cmd + ["exec", "-T", "postgres", "sh", "-c", script],
+        cwd=deploy_dir,
+        check=False,
+    )
+    if result.returncode != 0:
+        # Never echo a connection string, password, or raw database diagnostic.
+        console.print(i18n.t("deploy_pg_credentials_failed"), markup=False)
+        raise typer.Exit(1)
 
 
 @deploy_app.callback(invoke_without_command=True)

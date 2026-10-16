@@ -74,6 +74,7 @@
   "deploy_starting_infra": "Starting PostgreSQL and Redis...",
   "deploy_waiting_pg": "Waiting for PostgreSQL to be ready...",
   "deploy_pg_timeout": "PostgreSQL startup timed out, please check logs",
+  "deploy_pg_credentials_failed": "PostgreSQL is reachable, but authentication/database access failed. Check POSTGRES_USER, POSTGRES_PASSWORD and POSTGRES_DB in .hohu/deploy/.env against the existing database. Older CLI versions shared hohu-pgdata across projects; rebuilding images or changing .env does not update credentials stored in a volume. Restore the matching configuration or have the database administrator repair access. No migrations were run; do not delete the data volume to fix this error.",
   "deploy_migrating": "Running database migrations...",
   "deploy_starting_all": "Starting all services...",
   "deploy_success": "Deployment complete!",

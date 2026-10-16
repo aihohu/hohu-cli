@@ -74,7 +74,7 @@ def test_security_template_version_is_tracked_independently() -> None:
         (TEMPLATES / ".template-version").read_text(encoding="utf-8").strip()
     )
     # Template revisions change with deployment files, independently of CLI releases.
-    assert template_version == "0.1.14"
+    assert template_version == "0.1.16"
 
 
 def test_compose_has_no_known_credential_fallbacks() -> None:
