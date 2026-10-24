@@ -10,4 +10,4 @@
 
 新贡献默认按 [Apache License 2.0](./LICENSE) 授权，贡献者保留版权。请保留继承代码和第三方代码的原始许可与版权声明。本项目曾以 MIT 发布，该授权对已分发副本继续有效。
 
-每个 commit 使用 `git commit -s` 添加 DCO `Signed-off-by`。DCO 不等于版权转让。当前许可调整不增加版本号，也不表示已经发布。
+提交规则统一见 [主贡献指南](https://github.com/aihohu/hohu-admin/blob/main/docs/CONTRIBUTING.md#提交规范与授权)。使用一句英文 `type(scope): description`；维护者自己的贡献默认不添加 `Signed-off-by`、`Co-Authored-By` 或版权尾注，外部贡献仍使用 `git commit -s`。逐文件暂存，不跳过钩子，不 amend 已推送提交；提交、推送须有明确授权。DCO 不等于版权转让，本规则不改变既有许可证或版本号。
